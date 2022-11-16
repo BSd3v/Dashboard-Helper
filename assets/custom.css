@@ -12,3 +12,14 @@ pre {
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
+
+#errorsCanvas {
+    border: 1px solid silver;
+    margin-left: 1%;
+    margin-right: 1%;
+    width: 98%;
+    height: 25vh;
+    max-height: 25vh;
+    overflow-y: auto;
+    color: red;
+}

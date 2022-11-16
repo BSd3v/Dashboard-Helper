@@ -47,13 +47,14 @@ app.layout = html.Div(id='div-app',children=[
                    dbc.Button('Make Changes', id='submitEdits'),
                    acc(id='graphingOptions'),
                    ], id='chartEditor', style=offCanvStyle),
-    dbc.Offcanvas(id='errorsCanvas', children=[html.Pre(id='errors')], style=offCanvStyle),
     dbc.Offcanvas(id='functions', children=[html.Pre(id='functionHelper')], style=offCanvStyle),
     dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
                style={'margin-left':'1%'}),
-    dbc.Button(id='openErrors', children='Show Errors', n_clicks=0, color="danger",
-               style={'float':'right', 'display':'none'}, className="me-1"),
+    dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
+               style={'float':'right', 'display':'none', 'margin-right':'1%'}, className="me-1"),
     dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
+    html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
+                 style={'display':'none'}),
     html.Div([dash_table.DataTable(id='tableInfo'),
              ], id='page-content')
 ])
@@ -107,13 +108,6 @@ def parse_contents(contents, filename, date):
 )
 
 @app.callback(
-    Output('errorsCanvas','is_open'),
-    Input('openErrors','n_clicks'),
-    State('errorsCanvas','is_open'),
-    prevent_initial_call=True
-)
-
-@app.callback(
     Output('functions','is_open'),
     Input('openHelper','n_clicks'),
     State('functions','is_open'),
@@ -123,6 +117,20 @@ def openEditor(n1, isOpen):
     if n1 > 0:
         return not isOpen
     return isOpen
+
+
+@app.callback(
+    Output('errorsCanvas','style'),
+    Input('openErrors','n_clicks'),
+    State('errorsCanvas','style'),
+    prevent_initial_call=True
+)
+def openErrors(n1, s):
+    if n1 > 0:
+        if s == {'display':'none'}:
+            return {'display': 'block'}
+        return {'display':'none'}
+    return {'display':'none'}
 
 
 @app.callback(Output('contentDisplay', 'children'),
@@ -153,13 +161,15 @@ def graphingOptions(chart, data):
     Output('errors','children'),
     Output('functionHelper','children'),
     Output('openErrors','style'),
+    Output('openErrors','n_clicks'),
     Input('submitEdits','n_clicks'),
     Input('tableInfo', 'data'),
     State('graphingOptions','children'),
     State('selectChart','value'),
+    State('openErrors','n_clicks'),
     prevent_initial_call=True
 )
-def updateLayout(n1, data, opts, selectChart):
+def updateLayout(n1, data, opts, selectChart, n2):
     if data and opts:
         df = pd.DataFrame.from_dict(data)
         df = df.infer_objects()
@@ -169,8 +179,10 @@ def updateLayout(n1, data, opts, selectChart):
         fig, error, func_string = makeCharts(df, figureDict)
         style = {'float': 'right', 'display': 'none'}
         if error != '':
-            style = {'float':'right', 'display':'inline-block'}
-        return dcc.Graph(figure=fig), error, func_string, style
+            style = {'float':'right', 'display':'inline-block', 'margin-right':'1%'}
+        else:
+            n2 = 0
+        return dcc.Graph(figure=fig), error, func_string, style, n2
     raise PreventUpdate
 
 
