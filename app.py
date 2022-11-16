@@ -182,7 +182,12 @@ def updateLayout(n1, data, opts, selectChart, n2):
             style = {'float':'right', 'display':'inline-block', 'margin-right':'1%'}
         else:
             n2 = 0
-        return dcc.Graph(figure=fig), error, func_string, style, n2
+        return dcc.Graph(figure=fig), error, [dcc.Clipboard(id="table_copy",
+                                                            target_id='functionHelper',
+                                                            style={"fontSize":20,
+                                                                   'cursor':'pointer',
+                                                                   'float':'right'
+                                                                   }),func_string], style, n2
     raise PreventUpdate
 
 
