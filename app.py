@@ -28,14 +28,15 @@ app.layout = html.Div(id='div-app',children=[
                    html.A('Select Files')
                ]),
                style={
-                   'width': '100%',
+                   'width': '98%',
                    'height': '60px',
                    'lineHeight': '60px',
                    'borderWidth': '1px',
                    'borderStyle': 'dashed',
                    'borderRadius': '5px',
                    'textAlign': 'center',
-                   'margin': '10px'
+                   'margin':'1%',
+                   'cursor':'pointer'
                },
                 # Allow multiple files to be uploaded
                 multiple=True
@@ -169,4 +170,4 @@ def updateLayout(n1, data, opts, selectChart):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
