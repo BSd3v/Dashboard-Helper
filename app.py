@@ -14,7 +14,7 @@ px_list = getmembers(px, isfunction)
 #go_list = getmembers(go, isclass)
 chartOpts = ['px.'+i for i, y in px_list]#+['go.'+i for i, y in go_list]
 
-
+offCanvStyle= {'border-radius':'15px'}
 
 app = Dash(__name__, suppress_callback_exceptions=True,
            external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -46,14 +46,16 @@ app.layout = html.Div(id='div-app',children=[
                    dcc.Dropdown(id='selectChart', options=chartOpts),
                    dbc.Button('Make Changes', id='submitEdits'),
                    acc(id='graphingOptions'),
-                   ], id='chartEditor'),
-    dbc.Offcanvas(id='errors'),
-    dbc.Offcanvas(id='functions', children=[html.Pre(id='functionHelper')]),
-    dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1"),
+                   ], id='chartEditor', style=offCanvStyle),
+    dbc.Offcanvas(id='errors', style=offCanvStyle),
+    dbc.Offcanvas(id='functions', children=[html.Pre(id='functionHelper')], style=offCanvStyle),
+    dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
+               style={'margin-left':'1%'}),
     dbc.Button(id='openErrors', children='Show Errors', n_clicks=0, color="danger",
                style={'float':'right', 'display':'none'}, className="me-1"),
     dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
-    html.Div([dash_table.DataTable(id='tableInfo')],id='page-content')
+    html.Div([dash_table.DataTable(id='tableInfo'),
+             ], id='page-content')
 ])
 
 def parse_contents(contents, filename, date):
@@ -83,7 +85,7 @@ def parse_contents(contents, filename, date):
             columns=[{'name': i, 'id': i} for i in df.columns],
         id='tableInfo',
         sort_action='native',
-        editable=True),
+        editable=True,),
 
         html.Hr(),  # horizontal line
 
@@ -92,8 +94,9 @@ def parse_contents(contents, filename, date):
         html.Pre(contents[0:200] + '...', style={
             'whiteSpace': 'pre-wrap',
             'wordBreak': 'break-all'
-        })
-    ])
+        }),
+    ], style={'width':'98%', 'margin':'1%'}
+)
 
 
 @app.callback(
@@ -137,11 +140,13 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
 @app.callback(
     Output('graphingOptions','children'),
     Input('selectChart','value'),
+    Input('tableInfo', 'data'),
     prevent_initial_call=True,
 )
-def graphingOptions(chart):
+def graphingOptions(chart, data):
     if chart:
-        return getOpts(chart)
+        df = pd.DataFrame.from_dict(data)
+        return getOpts(chart, df)
 
 @app.callback(
     Output('page-content','children'),

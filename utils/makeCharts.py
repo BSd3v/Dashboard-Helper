@@ -4,10 +4,10 @@ from plotly.express._core import make_figure
 import plotly.graph_objects as go
 import dash_mantine_components as dmc
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
-from pprint import pprint
 import json
 import traceback
-import pandas as pd
+from utils.buildCols import cols, multiCols
+
 
 layoutList = ["arg", "activeselection", "activeshape", "annotations", "annotationdefaults",
               "autosize", "autotypenumbers", "bargap", "bargroupgap", "barmode", "barnorm",
@@ -54,7 +54,7 @@ def parseSelections(opts, layout):
             if inp['props']['id'] == 'data_frame':
                 args.append(inp['props']['id'] + '=' + inp['props']['value'] + '')
             elif inp['props']['value'] != '':
-                args.append(inp['props']['id'] + '="' + inp['props']['value'] + '"')
+                args.append(inp['props']['id'] + '="' + str(inp['props']['value']) + '"')
                 if inp['props']['value'] == 'False':
                     info[inp['props']['id']] = False
                 elif inp['props']['value'] == 'True':
@@ -90,9 +90,10 @@ def parseSelections(opts, layout):
 
     return {'figure': info, 'layout':updateLayout}
 
-def getOpts(selectChart):
+def getOpts(selectChart, data={}):
     layout = []
     sig = signature(findFunc(selectChart))
+
     for param in sig.parameters.values():
         layout.append(html.Div(str(param).split('=')[0] + ':'))
         if 'data_frame' in str(param):
@@ -100,7 +101,17 @@ def getOpts(selectChart):
                                 placeholder=str(param).split('=')[0],
                                     value='data', disabled=True))
         else:
-            layout.append(dcc.Input(id=str(param).split('=')[0],
+            if str(param).split('=')[0] in cols or str(param).split('=')[0] in multiCols:
+                if str(param).split('=')[0] in multiCols:
+                    layout.append(dcc.Dropdown(id=str(param).split('=')[0],
+                                            placeholder=str(param).split('=')[0],
+                                            persistence='memory', options=data.columns, multi=True))
+                else:
+                    layout.append(dcc.Dropdown(id=str(param).split('=')[0],
+                                               placeholder=str(param).split('=')[0],
+                                               persistence='memory', options=data.columns))
+            else:
+                layout.append(dcc.Input(id=str(param).split('=')[0],
                                     placeholder=str(param).split('=')[0],
                                         persistence='memory'))
     updateLayout = []
@@ -110,7 +121,7 @@ def getOpts(selectChart):
         updateLayout.append(dcc.Input(id='layout_' + param,
                                 placeholder=param))
     return [dmc.AccordionItem([dcc.Link('API Reference', href=f'https://plotly.com/python-api-reference/generated/plotly.'
-        f'express.{selectChart}.html#plotly.express.{selectChart}', target='_blank'),
+        f'express.{selectChart.replace("px.","")}.html#plotly.express.{selectChart.replace("px.","")}', target='_blank'),
                                html.Br(),
                               dcc.Link('Plotly Example Docs', href='https://plotly.com/python/', target='_blank'),
                                html.Br(),

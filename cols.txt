@@ -1,0 +1,1 @@
+["x", "y", "color", "symbol", "size", "hover_name", "text", "facet_row", "facet_col", "error_x", "error_x_minus", "error_y", "error_y_minus", "animation_frame", "animation_group", "z", "error_z", "error_z_minus", "r", "theta", "a", "b", "c", "lat", "lon", "locations", "line_group", "line_dash", "pattern_shape", "base", "x_start", "x_end", "names", "values", "parents", "ids"]

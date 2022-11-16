@@ -1,0 +1,6 @@
+.mantine-Accordion-contentInner > div {
+    background-color: rgba(0,0,0,0.15);
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-left: -10px;
+}
