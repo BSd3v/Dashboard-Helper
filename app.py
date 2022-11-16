@@ -47,7 +47,7 @@ app.layout = html.Div(id='div-app',children=[
                    dbc.Button('Make Changes', id='submitEdits'),
                    acc(id='graphingOptions'),
                    ], id='chartEditor', style=offCanvStyle),
-    dbc.Offcanvas(id='errors', style=offCanvStyle),
+    dbc.Offcanvas(id='errorsCanvas', children=[html.Pre(id='errors')], style=offCanvStyle),
     dbc.Offcanvas(id='functions', children=[html.Pre(id='functionHelper')], style=offCanvStyle),
     dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
                style={'margin-left':'1%'}),
@@ -87,14 +87,14 @@ def parse_contents(contents, filename, date):
         sort_action='native',
         editable=True,),
 
-        html.Hr(),  # horizontal line
-
-        # For debugging, display the raw contents provided by the web browser
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        }),
+        # html.Hr(),  # horizontal line
+        #
+        # # For debugging, display the raw contents provided by the web browser
+        # html.Div('Raw Content'),
+        # html.Pre(contents[0:200] + '...', style={
+        #     'whiteSpace': 'pre-wrap',
+        #     'wordBreak': 'break-all'
+        # }),
     ], style={'width':'98%', 'margin':'1%'}
 )
 
@@ -107,9 +107,9 @@ def parse_contents(contents, filename, date):
 )
 
 @app.callback(
-    Output('errors','is_open'),
+    Output('errorsCanvas','is_open'),
     Input('openErrors','n_clicks'),
-    State('errors','is_open'),
+    State('errorsCanvas','is_open'),
     prevent_initial_call=True
 )
 
