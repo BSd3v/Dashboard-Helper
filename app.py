@@ -3,6 +3,7 @@ from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
 import dash_bootstrap_components as dbc
 from dash_mantine_components import Accordion as acc
+import dash_mantine_components as dmc
 from utils.makeCharts import makeCharts, getOpts, parseSelections
 
 import datetime, base64, io, pandas as pd
@@ -47,7 +48,7 @@ app.layout = html.Div(id='div-app',children=[
                    dbc.Button('Make Changes', id='submitEdits'),
                    acc(id='graphingOptions'),
                    ], id='chartEditor', style=offCanvStyle),
-    dbc.Offcanvas(id='functions', children=[html.Pre(id='functionHelper')], style=offCanvStyle),
+    dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
     dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
                style={'margin-left':'1%'}),
     dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
@@ -182,12 +183,7 @@ def updateLayout(n1, data, opts, selectChart, n2):
             style = {'float':'right', 'display':'inline-block', 'margin-right':'1%'}
         else:
             n2 = 0
-        return dcc.Graph(figure=fig), error, [dcc.Clipboard(id="table_copy",
-                                                            target_id='functionHelper',
-                                                            style={"fontSize":20,
-                                                                   'cursor':'pointer',
-                                                                   'float':'right'
-                                                                   }),func_string], style, n2
+        return dcc.Graph(figure=fig), error, dmc.Prism(func_string, language='python'), style, n2
     raise PreventUpdate
 
 
