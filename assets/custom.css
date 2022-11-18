@@ -23,3 +23,12 @@ pre {
     overflow-y: auto;
     color: red;
 }
+
+.dash-graph:active {
+  width: 0;
+  height: 0;
+}
+
+body {
+    font-size: 12pt;
+}

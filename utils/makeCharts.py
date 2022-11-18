@@ -138,8 +138,12 @@ def getOpts(selectChart, data={}):
 def makeCharts(data, figureDict):
     selectChart = figureDict['chart']
 
-    func_string = 'fig = ' +selectChart +'(' + ',\n'.join([key + '="' + str(value) +
-                                                           '"' for key, value in figureDict['figure'].items()]) + ')'
+    func_string = []
+
+    func_string.append(html.Div(["""Figure function call representation:""",
+                                 dmc.Prism('fig = ' +selectChart +'(' + ',\n'.join([key + '="' + str(value) +
+                                                           '"' for key, value in figureDict['figure'].items()]) + ')',
+                                  language='Python'), html.Br()]))
 
     error = ''
     try:
@@ -150,11 +154,29 @@ def makeCharts(data, figureDict):
         if 'layout' in figureDict:
             fig.update_layout(figureDict['layout'])
 
-            func_string += '\n\nfig.update_layout(' + json.dumps(figureDict['layout']) + ")"
+            func_string.append(html.Div([
+                """Updates the figure's layout:""",
+                dmc.Prism('fig.update_layout(' + json.dumps(figureDict['layout']) + ")",
+                                         language='Python'), html.Br()]))
     except:
         fig = go.Figure()
         error = traceback.format_exc()
 
-    func_string += '\n\nmakeCharts(df,\n ' + json.dumps(figureDict).replace(',',',\n') + ')'
+    func_string.append(html.Div(["""Use this with the makeCharts function to get the desired chart:""",
+                                 dmc.Prism('fig = makeCharts(df,\n ' + json.dumps(figureDict).replace(',',',\n') + ')',
+                                 language='Python')]))
 
     return fig, error, func_string
+
+def stripFigure(info):
+    iDict = info.copy()
+    for key in iDict:
+        if key in ['chart','figure','layout']:
+            info.pop(key, None)
+    return info
+
+def makeDCC_Graph(data, info):
+    fig = makeCharts(data, info)[0]
+    newInfo = stripFigure(info.copy())
+    graph = dcc.Graph(figure=fig, **newInfo)
+    return graph

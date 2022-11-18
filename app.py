@@ -1,11 +1,13 @@
-from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx
+from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container
+import dash
 from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
 import dash_bootstrap_components as dbc
 from dash_mantine_components import Accordion as acc
 import dash_mantine_components as dmc
-from utils.makeCharts import makeCharts, getOpts, parseSelections
+from utils.makeCharts import makeCharts, getOpts, parseSelections, makeDCC_Graph
 import yfinance as yf
+from dash_iconify import DashIconify
 
 import datetime, base64, io, pandas as pd
 
@@ -29,14 +31,87 @@ preload = {"carshare":px.data.carshare(),
 
 offCanvStyle= {'border-radius':'15px'}
 
-app = Dash(__name__, suppress_callback_exceptions=True,
+app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, pages_folder='',
            external_stylesheets=[dbc.themes.BOOTSTRAP],
            )
 
+
+def home():
+    return [
+        html.Div(id='contentDisplay', style={'maxHeight': '25vh', 'overflowY': 'auto',
+                                             'margin': '1%',
+                                             'border': '1pt solid silver'},
+                 ),
+        dbc.Offcanvas(['Select the chart type and options below',
+                       dcc.Dropdown(id='selectChart', options=chartOpts),
+                       dbc.Button('Make Changes', id='submitEdits'),
+                       acc(id='graphingOptions'),
+                       ], id='chartEditor', style=offCanvStyle),
+        dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
+        dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
+                   style={'margin-left': '1%'}),
+        dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
+                   style={'float': 'right', 'display': 'none', 'margin-right': '2%'}, className="me-1"),
+        dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
+        html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
+                 style={'display': 'none'}),
+        html.Div([dash_table.DataTable(id='tableInfo'),
+                  ], id='page-content')]
+
+
+dash.register_page('Data and Chart Explorer', path='/', layout=home)
+
+
+def chart():
+    example = """
+df = px.data.gapminder()
+
+return makeDCC_Graph(df,
+    {"figure": 
+        {"x": "country",
+        "y": "lifeExp",
+        "color": "continent",
+        "size": "pop",
+        "animation_frame": "year"},
+    "layout": {},
+    "chart": "px.scatter",
+    'id':'testing',
+    'style':{'overflow':'auto',
+            'height':'85%',
+            'width':'80%',
+            'border':'1px solid black', 
+            'position':'absolute'
+            }
+    })"""
+    df = px.data.gapminder()
+    return [makeDCC_Graph(df,
+                          {"figure": {"x": "country",
+                                      "y": "lifeExp",
+                                      "color": "continent",
+                                      "size": "pop",
+                                      "animation_frame": "year"},
+                           "layout": {},
+                           "chart": "px.scatter", 'id': 'testing',
+                           'style': {'overflow': 'auto',
+                                     'height': '85%', 'width': '80%',
+                                     'border': '1px solid black', 'position': 'absolute'}}),
+            dmc.Prism(example,
+                      language='Python', style={'float': 'right', 'width': '20%'})]
+
+dash.register_page('Example', path='/chart', layout=chart)
+
+def sidebar():
+    return dbc.Nav(
+        [dbc.NavItem(dbc.NavLink(i, href=dash.page_registry[i]['path'], active='exact')) for i in dash.page_registry],
+        pills=True,
+        vertical=True
+    )
+
 app.layout = html.Div(id='div-app',children=[
     dcc.Location(id='url'),
-    html.Div(id='persistenceClear'),
-    html.H5('Data and Chart Explorer', style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
+    dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"), style={'position':'absolute', 'top':'0px'}),
+    dbc.Offcanvas(id='sidebar', children=sidebar()),
+    html.Div(id='persistenceClear'),html.H5('Data and Chart Explorer', style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
     dbc.Row([dbc.Col([
     dcc.Upload(id='uploadContent',
                children=html.Div([
@@ -66,25 +141,7 @@ app.layout = html.Div(id='div-app',children=[
                       'margin-bottom':'1%'}),
         ])], style={'background-color':'#c5c6d0', 'margin-left':'1%',
                     'margin-right':'1%'}),
-    html.Div(id='contentDisplay', style={'maxHeight':'25vh', 'overflowY':'auto',
-                                         'margin':'1%',
-                                         'border':'1pt solid silver'},
-             ),
-    dbc.Offcanvas(['Select the chart type and options below',
-                   dcc.Dropdown(id='selectChart', options=chartOpts),
-                   dbc.Button('Make Changes', id='submitEdits'),
-                   acc(id='graphingOptions'),
-                   ], id='chartEditor', style=offCanvStyle),
-    dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
-    dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
-               style={'margin-left':'1%'}),
-    dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
-               style={'float':'right', 'display':'none', 'margin-right':'1%'}, className="me-1"),
-    dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
-    html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
-                 style={'display':'none'}),
-    html.Div([dash_table.DataTable(id='tableInfo'),
-             ], id='page-content')
+    page_container
 ], style={'padding':'0px'})
 
 def parse_contents(contents, filename, date):
@@ -132,6 +189,13 @@ def parse_contents(contents, filename, date):
     Output('chartEditor','is_open'),
     Input('openEditor','n_clicks'),
     State('chartEditor','is_open'),
+    prevent_initial_call=True
+)
+
+@app.callback(
+    Output('sidebar','is_open'),
+    Input('sidebarButton','n_clicks'),
+    State('sidebar','is_open'),
     prevent_initial_call=True
 )
 
@@ -255,7 +319,7 @@ def updateLayout(n1, data, opts, selectChart, n2):
             style = {'float':'right', 'display':'inline-block', 'margin-right':'1%'}
         else:
             n2 = 0
-        return dcc.Graph(figure=fig), error, dmc.Prism(func_string, language='python'), style, n2
+        return dcc.Graph(figure=fig), error, func_string, style, n2
     raise PreventUpdate
 
 
