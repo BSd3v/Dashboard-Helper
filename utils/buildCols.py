@@ -2,6 +2,7 @@ import pandas as pd
 from bs4 import BeautifulSoup as bs4
 import requests
 import json
+from plotly.express import _doc
 
 
 cols = []
@@ -18,22 +19,13 @@ except:
     pass
 
 if cols == []:
-    r = requests.get('https://plotly.com/python-api-reference/plotly.express.html')
-
-    soup = bs4(r.content, 'lxml')
-    refs = soup.find('table', {'class': 'longtable'}).findAll('a')
-    for ref in refs:
-        r = requests.get(f'https://plotly.com/python-api-reference/{ref["href"]}')
-        try:
-            l_opts = bs4(r.content, 'lxml').find('ul', {'class':'simple'}).findAll('li')
-            for opt in l_opts:
-                    if 'Either a name of a column in data_frame' in opt.text and opt.text.split(' ')[0] not in cols:
-                        cols.append(opt.text.split(' ')[0])
-                    if ('Either a list of names of columns in data_frame' in opt.text or
-                    'Either names of columns in data_frame' in opt.text) and opt.text.split(' ')[0] not in multiCols:
-                        multiCols.append(opt.text.split(' ')[0])
-        except:
-            pass
+    for opt in _doc.docs:
+        if (_doc.colref_desc in _doc.docs[opt] or
+        'Either a name of a column in `data_frame`' in _doc.docs[opt][1]) and opt not in cols:
+            cols.append(opt)
+        if (_doc.colref_list_desc in _doc.docs[opt] or
+                'Either a list of names of columns in `data_frame`' in _doc.docs[opt][1]) and opt not in cols:
+            multiCols.append(opt)
 
     with open('cols.txt', 'w') as f:
         f.write(json.dumps(cols))

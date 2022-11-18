@@ -1,1 +1,0 @@
-["hover_data", "custom_data", "path", "dimensions"]

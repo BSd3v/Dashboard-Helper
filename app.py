@@ -1,10 +1,11 @@
-from dash import Dash, html, dcc, Input, Output, State, dash_table
+from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx
 from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
 import dash_bootstrap_components as dbc
 from dash_mantine_components import Accordion as acc
 import dash_mantine_components as dmc
 from utils.makeCharts import makeCharts, getOpts, parseSelections
+import yfinance as yf
 
 import datetime, base64, io, pandas as pd
 
@@ -15,6 +16,17 @@ px_list = getmembers(px, isfunction)
 #go_list = getmembers(go, isclass)
 chartOpts = ['px.'+i for i, y in px_list]#+['go.'+i for i, y in go_list]
 
+preload = {"carshare":px.data.carshare(),
+    "election":px.data.election(),
+    "experiment":px.data.experiment(),
+    "gapminder":px.data.gapminder(),
+    "iris":px.data.iris(),
+    "medals_wide":px.data.medals_wide(),
+    "medals_long":px.data.medals_long(),
+    "stocks":px.data.stocks(),
+    "tips":px.data.tips(),
+    "wind":px.data.wind()}
+
 offCanvStyle= {'border-radius':'15px'}
 
 app = Dash(__name__, suppress_callback_exceptions=True,
@@ -23,10 +35,13 @@ app = Dash(__name__, suppress_callback_exceptions=True,
 
 app.layout = html.Div(id='div-app',children=[
     dcc.Location(id='url'),
+    html.Div(id='persistenceClear'),
+    html.H5('Data and Chart Explorer', style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
+    dbc.Row([dbc.Col([
     dcc.Upload(id='uploadContent',
                children=html.Div([
                    'Drag and Drop or ',
-                   html.A('Select Files')
+                   html.A('Select File')
                ]),
                style={
                    'width': '98%',
@@ -36,13 +51,25 @@ app.layout = html.Div(id='div-app',children=[
                    'borderStyle': 'dashed',
                    'borderRadius': '5px',
                    'textAlign': 'center',
-                   'margin':'1%',
-                   'cursor':'pointer'
+                   'margin-left':'1%',
+                    'margin-right':'1%',
+                    'margin-top':'1%',
+                   'cursor':'pointer',
+                   'background-color':'white'
                },
-                # Allow multiple files to be uploaded
-                multiple=True
-               ),
-    html.Div(id='contentDisplay', style={'maxHeight':'25vh', 'overflowY':'auto'}),
+               )]),dbc.Col([
+    dmc.Select(label='Preloaded Data:',id='preloadData', data=list(preload.keys()),
+               style={'margin-left':'1%', 'margin-right':'1%', 'width':'98%',
+                      'margin-bottom':'1%',})]),dbc.Col([
+    dmc.TextInput(label='Realtime Stock Info', placeholder='Ticker', id='stockQuery',
+                  style={'margin-left':'1%', 'margin-right':'1%', 'width':'98%',
+                      'margin-bottom':'1%'}),
+        ])], style={'background-color':'#c5c6d0', 'margin-left':'1%',
+                    'margin-right':'1%'}),
+    html.Div(id='contentDisplay', style={'maxHeight':'25vh', 'overflowY':'auto',
+                                         'margin':'1%',
+                                         'border':'1pt solid silver'},
+             ),
     dbc.Offcanvas(['Select the chart type and options below',
                    dcc.Dropdown(id='selectChart', options=chartOpts),
                    dbc.Button('Make Changes', id='submitEdits'),
@@ -58,7 +85,7 @@ app.layout = html.Div(id='div-app',children=[
                  style={'display':'none'}),
     html.Div([dash_table.DataTable(id='tableInfo'),
              ], id='page-content')
-])
+], style={'padding':'0px'})
 
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
@@ -133,18 +160,63 @@ def openErrors(n1, s):
         return {'display':'none'}
     return {'display':'none'}
 
+app.clientside_callback(
+    """function () {
+        const keys = Object.keys(localStorage)
+        const triggered = dash_clientside.callback_context.triggered.map(t => t.prop_id);
+        if (typeof oldTrig !== 'undefined') {
+            if (oldTrig == triggered) {
+                return ''
+            }
+        }
+        oldTrig = triggered
+        for (let key of keys) {
+            if (String(key).includes('_dash_persistence')) {
+                localStorage.removeItem(key)
+            }
+        }
+        return ''
+    }""",
+    Output('persistenceClear','children'),
+    [Input('uploadContent', 'contents')],
+    Input('preloadData', 'value'),
+    Input('stockQuery','value')
+)
+
 
 @app.callback(Output('contentDisplay', 'children'),
               [Input('uploadContent', 'contents')],
+              Input('preloadData', 'value'),
+              Input('stockQuery','value'),
               [State('uploadContent', 'filename'),
                State('uploadContent', 'last_modified')],
               prevent_initial_call=True)
-def update_output(list_of_contents, list_of_names, list_of_dates):
-    if list_of_contents is not None:
-        children = [
-            parse_contents(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
+def update_output(c, pl, s, n, d):
+    if c is not None and ctx.triggered_id == 'uploadContent':
+        children = parse_contents(c, n, d)
         return children
+    elif ctx.triggered_id == 'preloadData':
+        df = preload[pl]
+        tbl = dash_table.DataTable(
+            data=df.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df.columns],
+            id='tableInfo',
+            sort_action='native',
+            editable=True, )
+        return [pl, tbl]
+    elif ctx.triggered_id == 'stockQuery':
+        df = yf.Ticker(s).history(period='max').reset_index()
+        df['Date'] = pd.to_datetime(df['Date'])
+        if df.empty:
+            raise PreventUpdate
+        tbl = dash_table.DataTable(
+            data=df.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df.columns],
+            id='tableInfo',
+            sort_action='native',
+            editable=True, )
+        return [s, tbl]
+
 
 @app.callback(
     Output('graphingOptions','children'),
