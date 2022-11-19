@@ -72,7 +72,8 @@ return makeDCC_Graph(df,
         "y": "lifeExp",
         "color": "continent",
         "size": "pop",
-        "animation_frame": "year"},
+        "animation_frame": "year",
+        "template":"presentation"},
     "layout": {},
     "chart": "px.scatter",
     'id':'testing',
@@ -89,7 +90,8 @@ return makeDCC_Graph(df,
                                       "y": "lifeExp",
                                       "color": "continent",
                                       "size": "pop",
-                                      "animation_frame": "year"},
+                                      "animation_frame": "year",
+                                      "template":"presentation"},
                            "layout": {},
                            "chart": "px.scatter", 'id': 'testing',
                            'style': {'overflow': 'auto',
@@ -300,7 +302,7 @@ def graphingOptions(chart, data):
     Output('openErrors','style'),
     Output('openErrors','n_clicks'),
     Input('submitEdits','n_clicks'),
-    Input('tableInfo', 'data'),
+    State('tableInfo', 'data'),
     State('graphingOptions','children'),
     State('selectChart','value'),
     State('openErrors','n_clicks'),
@@ -324,4 +326,4 @@ def updateLayout(n1, data, opts, selectChart, n2):
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)

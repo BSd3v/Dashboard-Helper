@@ -1,5 +1,6 @@
 from dash import dcc, Input, Output, State, html
 import plotly.express as px
+from plotly.io._templates import templates
 from plotly.express._core import make_figure
 import plotly.graph_objects as go
 import dash_mantine_components as dmc
@@ -7,6 +8,7 @@ from inspect import getmembers, isfunction, getargvalues, signature, isclass
 import json
 import traceback
 from utils.buildCols import cols, multiCols
+import os
 
 
 layoutList = ["arg", "activeselection", "activeshape", "annotations", "annotationdefaults",
@@ -110,6 +112,11 @@ def getOpts(selectChart, data={}):
                     layout.append(dcc.Dropdown(id=str(param).split('=')[0],
                                                placeholder=str(param).split('=')[0],
                                                persistence='memory', options=data.columns))
+            elif str(param).split('=')[0] == 'template':
+                layout.append(dcc.Dropdown(id=str(param).split('=')[0],
+                                           placeholder=str(param).split('=')[0],
+                                           persistence='memory', options=[t for t in templates]))
+
             else:
                 layout.append(dcc.Input(id=str(param).split('=')[0],
                                     placeholder=str(param).split('=')[0],
@@ -118,8 +125,13 @@ def getOpts(selectChart, data={}):
 
     for param in layoutList:
         updateLayout.append(html.Div(param + ':'))
-        updateLayout.append(dcc.Input(id='layout_' + param,
-                                placeholder=param))
+        if param == 'template':
+                updateLayout.append(dcc.Dropdown(id='layout_' + param,
+                                           placeholder=param,
+                                           persistence='memory', options=[t for t in templates]))
+        else:
+            updateLayout.append(dcc.Input(id='layout_' + param,
+                                placeholder=param, persistence='memory',))
     return [dmc.AccordionItem([dcc.Link('API Reference', href=f'https://plotly.com/python-api-reference/generated/plotly.'
         f'express.{selectChart.replace("px.","")}.html#plotly.express.{selectChart.replace("px.","")}', target='_blank'),
                                html.Br(),
