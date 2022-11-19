@@ -143,7 +143,7 @@ def makeCharts(data, figureDict):
     func_string.append(html.Div(["""Figure function call representation:""",
                                  dmc.Prism('fig = ' +selectChart +'(' + ',\n'.join([key + '="' + str(value) +
                                                            '"' for key, value in figureDict['figure'].items()]) + ')',
-                                  language='Python'), html.Br()]))
+                                  language='python'), html.Br()]))
 
     error = ''
     try:
@@ -157,14 +157,14 @@ def makeCharts(data, figureDict):
             func_string.append(html.Div([
                 """Updates the figure's layout:""",
                 dmc.Prism('fig.update_layout(' + json.dumps(figureDict['layout']) + ")",
-                                         language='Python'), html.Br()]))
+                                         language='python'), html.Br()]))
     except:
         fig = go.Figure()
         error = traceback.format_exc()
 
     func_string.append(html.Div(["""Use this with the makeCharts function to get the desired chart:""",
                                  dmc.Prism('fig = makeCharts(df,\n ' + json.dumps(figureDict).replace(',',',\n') + ')',
-                                 language='Python')]))
+                                 language='python')]))
 
     return fig, error, func_string
 

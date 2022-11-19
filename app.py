@@ -96,7 +96,7 @@ return makeDCC_Graph(df,
                                      'height': '85%', 'width': '80%',
                                      'border': '1px solid black', 'position': 'absolute'}}),
             dmc.Prism(example,
-                      language='Python', style={'float': 'right', 'width': '20%'})]
+                      language='python', style={'float': 'right', 'width': '20%'})]
 
 dash.register_page('Example', path='/chart', layout=chart)
 
@@ -111,7 +111,7 @@ app.layout = html.Div(id='div-app',children=[
     dcc.Location(id='url'),
     dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"), style={'position':'absolute', 'top':'0px'}),
     dbc.Offcanvas(id='sidebar', children=sidebar()),
-    html.Div(id='persistenceClear'),html.H5('Data and Chart Explorer', style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
+    html.Div(id='persistenceClear'),html.H2('Data and Chart Explorer', style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
     dbc.Row([dbc.Col([
     dcc.Upload(id='uploadContent',
                children=html.Div([
