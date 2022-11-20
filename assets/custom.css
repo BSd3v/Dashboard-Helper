@@ -24,11 +24,66 @@ pre {
     color: red;
 }
 
-.dash-graph:active {
-  width: 0;
-  height: 0;
+#design-area .dash-graph {
+  box-shadow: 5px 2px 15px black;
+  position: relative;
+}
+
+#design-area.edit .dash-graph {
+  resize: both;
+  overflow: auto;
+  padding-right: 1%;
+  cursor: grab;
+}
+
+#design-area.edit .dash-graph>div:first-of-type {
+    z-index: 1;
+    position: absolute;
+    width: 99%;
+    height: 100%;
+}
+
+#design-area.edit .dash-graph .js-plotly-plot {
+    z-index: -1;
+    opacity: 50%;
+}
+
+.nav-pills .nav-link.active {
+    color: #fff;
+    background-color: black;
 }
 
 body {
     font-size: 12pt;
+}
+
+#design-holder {
+    border: 1pt solid black;
+    border-radius: 5px
+}
+
+#design-holder button {
+    margin: 1%;
+    box-shadow:5px 2px 10px black;
+}
+
+#design-holder #openDesignEditor,  #design-holder #saveLayout {
+    display: none
+}
+
+#design-holder.edit #openDesignEditor, #design-holder.edit #saveLayout {
+    display: initial
+}
+
+
+#design-holder {
+    width:98%;
+    height:80%;
+    position:absolute;
+}
+
+#design-holder.expanded {
+    width:98%;
+    height:92%;
+    position:absolute;
 }

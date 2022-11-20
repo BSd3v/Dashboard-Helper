@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container
+from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container, MATCH
 import dash
 from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
@@ -33,15 +33,12 @@ offCanvStyle= {'border-radius':'15px'}
 
 app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, pages_folder='',
            external_stylesheets=[dbc.themes.BOOTSTRAP],
+            external_scripts=["https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"]
            )
 
 
 def home():
     return [
-        html.Div(id='contentDisplay', style={'maxHeight': '25vh', 'overflowY': 'auto',
-                                             'margin': '1%',
-                                             'border': '1pt solid silver'},
-                 ),
         dbc.Offcanvas(['Select the chart type and options below',
                        dcc.Dropdown(id='selectChart', options=chartOpts),
                        dbc.Button('Make Changes', id='submitEdits'),
@@ -55,14 +52,12 @@ def home():
         dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
         html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
                  style={'display': 'none'}),
-        html.Div([dash_table.DataTable(id='tableInfo'),
+        html.Div([dash_table.DataTable(id='tableInfo'),dcc.Graph(id='testFigure')
                   ], id='page-content')]
-
 
 dash.register_page('Data and Chart Explorer', path='/', layout=home)
 
-
-def chart():
+def exmaple1():
     example = """
 df = px.data.gapminder()
 
@@ -98,9 +93,59 @@ return makeDCC_Graph(df,
                                      'height': '85%', 'width': '80%',
                                      'border': '1px solid black', 'position': 'absolute'}}),
             dmc.Prism(example,
-                      language='python', style={'float': 'right', 'width': '20%'})]
+                      language='python', style={'float': 'right', 'width': '18%'})]
 
-dash.register_page('Example', path='/chart', layout=chart)
+dash.register_page('Example', path='/emaple1', layout=exmaple1)
+
+def designArea():
+    return html.Div([
+                     html.Div(id='design-area', children=[], style={'background-color':'#c5c6d0',
+                                                       'position':'absolute', 'height':'100%',
+                                                       'width':'100%'}),
+                     dbc.Offcanvas(['Select the chart type and options below',
+                                    dcc.Dropdown(id='selectDesignChart', options=chartOpts),
+                                    dbc.Button('Make Changes', id='submitDesignEdits'),
+                                    acc(id='graphingDesignOptions'),
+                                    ], id='chartDesignEditor', style=offCanvStyle),
+                    html.Div([
+                    dbc.Button('Toggle Edit Mode', id='toggleEdit', color="warning", className="me-1", n_clicks=0),
+                    dbc.Button(id='openDesignEditor', children='Add Chart', n_clicks=0, className="me-1"),
+                    dbc.Button(id='saveLayout', children='Save Layout', n_clicks=0, className="me-1", color='success'),
+                        ], style={'z-index':'1', 'position':'absolute', 'width':'100%'})
+                     ], id='design-holder')
+
+app.clientside_callback(
+    """
+        function (n1, c) {
+            if (n1 > 0) {
+                $('#design-area .dash-graph').unbind()
+                if (c == 'edit') {
+                    $("#design-holder").removeClass('edit')
+                    return ''
+                }
+                $("#design-holder").addClass('edit')
+                $('#design-area .dash-graph').each(function() {
+                    dragElement(this)
+                })
+                return 'edit'
+            }
+            return window.dash_clientside.no_update
+        }
+    """,
+    Output('design-area','className'),
+    Input('toggleEdit','n_clicks'),
+    State('design-area','className'),
+    prevent_intial_call=True
+)
+def toggleEdit(n1, c):
+    if n1 > 0:
+        if c:
+            if c == 'edit':
+                return '', ''
+        return 'edit','edit'
+    return dash.no_update, dash.no_update
+
+dash.register_page('Designer', path='/design_area', layout=designArea)
 
 def sidebar():
     return dbc.Nav(
@@ -111,9 +156,15 @@ def sidebar():
 
 app.layout = html.Div(id='div-app',children=[
     dcc.Location(id='url'),
-    dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"), style={'position':'absolute', 'top':'0px'}),
+    dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"),
+               color="dark", style={'position':'absolute', 'top':'0px', 'margin': '0.5%'}),
     dbc.Offcanvas(id='sidebar', children=sidebar()),
-    html.Div(id='persistenceClear'),html.H2('Data and Chart Explorer', style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
+    html.Div(id='persistenceClear'),
+    html.H2(['Data and Chart Explorer',
+             dbc.Button('Toggle Data Options', id='collapseData',
+                                                  color="warning", style={'margin-left':'2%'})],
+            style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
+    dbc.Collapse(id='dataOptions',children=[
     dbc.Row([dbc.Col([
     dcc.Upload(id='uploadContent',
                children=html.Div([
@@ -135,7 +186,7 @@ app.layout = html.Div(id='div-app',children=[
                    'background-color':'white'
                },
                )]),dbc.Col([
-    dmc.Select(label='Preloaded Data:',id='preloadData', data=list(preload.keys()),
+    dmc.Select(label='Plotly Datasets:',id='preloadData', data=list(preload.keys()),
                style={'margin-left':'1%', 'margin-right':'1%', 'width':'98%',
                       'margin-bottom':'1%',})]),dbc.Col([
     dmc.TextInput(label='Realtime Stock Info', placeholder='Ticker', id='stockQuery',
@@ -143,7 +194,11 @@ app.layout = html.Div(id='div-app',children=[
                       'margin-bottom':'1%'}),
         ])], style={'background-color':'#c5c6d0', 'margin-left':'1%',
                     'margin-right':'1%'}),
-    page_container
+    html.Div(id='contentDisplay', style={'maxHeight': '25vh', 'overflowY': 'auto',
+                                                 'margin': '1%',
+                                                 'border': '1pt solid silver'},
+                     )], is_open=True),
+    html.Div(page_container, style={'margin':'1%', 'height':'98%', 'width':'98%'})
 ], style={'padding':'0px'})
 
 def parse_contents(contents, filename, date):
@@ -186,11 +241,49 @@ def parse_contents(contents, filename, date):
     ], style={'width':'98%', 'margin':'1%'}
 )
 
+app.clientside_callback(
+    """
+        function (n1, isOpen) {
+            if (!isOpen) {
+                $("#design-holder").addClass('expanded')
+            }
+            return window.dash_clientside.no_update
+        }
+    """,
+    Output('design-holder','id'),
+    Input('design-holder','id'),
+    State('dataOptions','is_open')
+)
+
+
+app.clientside_callback(
+    """
+        function (n1, isOpen) {
+            if (n1 > 0) {
+                $("#design-holder").toggleClass('expanded')
+                return !isOpen
+            }
+            return true
+        }
+    """,
+    Output('dataOptions','is_open'),
+    Input('collapseData','n_clicks'),
+    State('dataOptions','is_open'),
+    prevent_initial_call=True
+)
+
 
 @app.callback(
     Output('chartEditor','is_open'),
     Input('openEditor','n_clicks'),
     State('chartEditor','is_open'),
+    prevent_initial_call=True
+)
+
+@app.callback(
+    Output('chartDesignEditor','is_open'),
+    Input('openDesignEditor','n_clicks'),
+    State('chartDesignEditor','is_open'),
     prevent_initial_call=True
 )
 
@@ -237,7 +330,7 @@ app.clientside_callback(
         }
         oldTrig = triggered
         for (let key of keys) {
-            if (String(key).includes('_dash_persistence')) {
+            if (String(key).includes('_dash_persistence') && !String(key).includes('template')) {
                 localStorage.removeItem(key)
             }
         }
@@ -251,6 +344,7 @@ app.clientside_callback(
 
 
 @app.callback(Output('contentDisplay', 'children'),
+              Output('testFigure','figure'),
               [Input('uploadContent', 'contents')],
               Input('preloadData', 'value'),
               Input('stockQuery','value'),
@@ -260,7 +354,7 @@ app.clientside_callback(
 def update_output(c, pl, s, n, d):
     if c is not None and ctx.triggered_id == 'uploadContent':
         children = parse_contents(c, n, d)
-        return children
+        return children, go.Figure()
     elif ctx.triggered_id == 'preloadData':
         df = preload[pl]
         tbl = dash_table.DataTable(
@@ -269,7 +363,7 @@ def update_output(c, pl, s, n, d):
             id='tableInfo',
             sort_action='native',
             editable=True, )
-        return [pl, tbl]
+        return [pl, tbl], go.Figure()
     elif ctx.triggered_id == 'stockQuery':
         df = yf.Ticker(s).history(period='max').reset_index()
         df['Date'] = pd.to_datetime(df['Date'])
@@ -281,12 +375,19 @@ def update_output(c, pl, s, n, d):
             id='tableInfo',
             sort_action='native',
             editable=True, )
-        return [s, tbl]
+        return [s, tbl], go.Figure()
 
 
 @app.callback(
     Output('graphingOptions','children'),
     Input('selectChart','value'),
+    Input('tableInfo', 'data'),
+    prevent_initial_call=True,
+)
+
+@app.callback(
+    Output('graphingDesignOptions','children'),
+    Input('selectDesignChart','value'),
     Input('tableInfo', 'data'),
     prevent_initial_call=True,
 )
@@ -321,9 +422,48 @@ def updateLayout(n1, data, opts, selectChart, n2):
             style = {'float':'right', 'display':'inline-block', 'margin-right':'1%'}
         else:
             n2 = 0
-        return dcc.Graph(figure=fig), error, func_string, style, n2
+        return dcc.Graph(figure=fig, id='testFigure'), error, func_string, style, n2
     raise PreventUpdate
 
+@app.callback(
+    Output('design-area','children'),
+    Input('submitDesignEdits','n_clicks'),
+    State('tableInfo', 'data'),
+    State('graphingDesignOptions','children'),
+    State('selectDesignChart','value'),
+    State('design-area','children'),
+    prevent_initial_call=True
+)
+def updateLayout(n1, data, opts, selectChart, children):
+    if data and opts:
+        df = pd.DataFrame.from_dict(data)
+        df = df.infer_objects()
+        figureDict = parseSelections(opts[1]['props']['children'],
+                                             opts[2]['props']['children'])
+        figureDict['chart'] = selectChart
+
+        figureDict['id'] = {'index':len(children), 'type':'design-charts'}
+
+        if not 'style' in figureDict:
+            figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
+
+        children.append(makeDCC_Graph(data, figureDict))
+        return children
+    raise PreventUpdate
+
+
+app.clientside_callback(
+    """function dragging(d) {
+        setTimeout(function () {
+        $('#design-area .dash-graph').unbind()
+        $('#design-area.edit .dash-graph').each(function() {
+            dragElement(this)
+        })}, 300)
+        return window.dash_clientside.no_update
+    }""",
+    Output('design-area', 'id'),
+    Input('design-area','children')
+)
 
 if __name__ == '__main__':
     app.run(debug=True)
