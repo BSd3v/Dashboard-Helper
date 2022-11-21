@@ -1,6 +1,11 @@
+function addEditButtons(el) {
+    $(el).append('<div class="fa-solid fa-pen-to-square btn-warning"></div>')
+    $(el).append('<div class="fa-solid fa-up-down-left-right btn-warning"></div>')
+    $(el).append('<div class="fa-solid fa-trash btn-danger"></div>')
+}
+
 
 function dragElement(elmnt) {
-    console.log('adding listener')
 
   var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
   $(elmnt).on('mousedown', function(e) {
@@ -27,8 +32,8 @@ function dragElement(elmnt) {
     pos3 = e.clientX;
     pos4 = e.clientY;
     // set the element's new position:
-    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    $(elmnt).closest('.dash-graph')[0].style.top = ($(elmnt).closest('.dash-graph')[0].offsetTop - pos2) + "px";
+    $(elmnt).closest('.dash-graph')[0].style.left = ($(elmnt).closest('.dash-graph')[0].offsetLeft - pos1) + "px";
   }
 
   function closeDragElement() {

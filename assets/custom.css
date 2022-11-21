@@ -33,7 +33,6 @@ pre {
   resize: both;
   overflow: auto;
   padding-right: 1%;
-  cursor: grab;
 }
 
 #design-area.edit .dash-graph>div:first-of-type {
@@ -41,6 +40,21 @@ pre {
     position: absolute;
     width: 99%;
     height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#design-area.edit .fa-solid {
+    font-size: 20pt;
+    border-radius: 20px;
+    padding: 5px;
+    box-shadow: 2px 2px 5px black;
+    margin: 5px;
+}
+
+#design-area.edit .fa-up-down-left-right {
+    cursor: move;
 }
 
 #design-area.edit .dash-graph .js-plotly-plot {

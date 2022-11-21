@@ -32,7 +32,7 @@ preload = {"carshare":px.data.carshare(),
 offCanvStyle= {'border-radius':'15px'}
 
 app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, pages_folder='',
-           external_stylesheets=[dbc.themes.BOOTSTRAP],
+           external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
             external_scripts=["https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"]
            )
 
@@ -102,6 +102,7 @@ def designArea():
                      html.Div(id='design-area', children=[], style={'background-color':'#c5c6d0',
                                                        'position':'absolute', 'height':'100%',
                                                        'width':'100%'}),
+                    dcc.Graph(id='testFigure', style={'display':'none'}),
                      dbc.Offcanvas(['Select the chart type and options below',
                                     dcc.Dropdown(id='selectDesignChart', options=chartOpts),
                                     dbc.Button('Make Changes', id='submitDesignEdits'),
@@ -119,13 +120,15 @@ app.clientside_callback(
         function (n1, c) {
             if (n1 > 0) {
                 $('#design-area .dash-graph').unbind()
+                $('#design-area .dash-graph > div:first-of-type').empty()
                 if (c == 'edit') {
                     $("#design-holder").removeClass('edit')
                     return ''
                 }
                 $("#design-holder").addClass('edit')
                 $('#design-area .dash-graph').each(function() {
-                    dragElement(this)
+                    addEditButtons($(this).find('div')[0])
+                    dragElement($(this).find('.fa-up-down-left-right')[0])
                 })
                 return 'edit'
             }
@@ -457,7 +460,8 @@ app.clientside_callback(
         setTimeout(function () {
         $('#design-area .dash-graph').unbind()
         $('#design-area.edit .dash-graph').each(function() {
-            dragElement(this)
+            addEditButtons($(this).find('div')[0])
+            dragElement($(this).find('.fa-up-down-left-right')[0])
         })}, 300)
         return window.dash_clientside.no_update
     }""",
