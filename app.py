@@ -1,4 +1,6 @@
-from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container, MATCH
+import json
+
+from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container, MATCH, ALL
 import dash
 from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
@@ -40,9 +42,9 @@ app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, pages_fo
 def home():
     return [
         dbc.Offcanvas(['Select the chart type and options below',
-                       dcc.Dropdown(id='selectChart', options=chartOpts),
-                       dbc.Button('Make Changes', id='submitEdits'),
-                       acc(id='graphingOptions'),
+                       dcc.Dropdown(id={'type':'selectChart', 'index':'design'}, options=chartOpts),
+                       dbc.Button('Make Changes', id={'type':'submitEdits', 'index':'design'}),
+                       acc(id={'type':'graphingOptions', 'index':'design'}),
                        ], id='chartEditor', style=offCanvStyle),
         dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
         dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
@@ -52,8 +54,7 @@ def home():
         dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
         html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
                  style={'display': 'none'}),
-        html.Div([dash_table.DataTable(id='tableInfo'),dcc.Graph(id='testFigure')
-                  ], id='page-content')]
+        html.Div([], id='page-content')]
 
 dash.register_page('Data and Chart Explorer', path='/', layout=home)
 
@@ -103,17 +104,26 @@ def designArea():
                                                        'position':'absolute', 'height':'100%',
                                                        'width':'100%'}),
                     dcc.Graph(id='testFigure', style={'display':'none'}),
+                    dcc.Store(id='focused-graph', storage_type='local'),
                      dbc.Offcanvas(['Select the chart type and options below',
-                                    dcc.Dropdown(id='selectDesignChart', options=chartOpts),
-                                    dbc.Button('Make Changes', id='submitDesignEdits'),
-                                    acc(id='graphingDesignOptions'),
+                                    dcc.Dropdown(id={'index':'edit', 'type':'selectChart_edit'}, options=chartOpts),
+                                    dbc.Button('Make Changes', id={'index':'edit', 'type':'submitEdits_edit'}),
+                                    acc(id={'index':'edit','type':'graphingOptions_edit'}),
                                     ], id='chartDesignEditor', style=offCanvStyle),
+                    dbc.Offcanvas(['Select the chart type and options below',
+                                   dcc.Dropdown(id={'index': '2', 'type': 'selectChart_edit'}, options=chartOpts),
+                                   dbc.Button('Make Changes', id={'index': '2', 'type': 'submitEdits_edit'}),
+                                   acc(id={'index': '2', 'type': 'graphingOptions_edit'}),
+                                   ], id='chartDesignEditor_edit', style=offCanvStyle),
                     html.Div([
                     dbc.Button('Toggle Edit Mode', id='toggleEdit', color="warning", className="me-1", n_clicks=0),
                     dbc.Button(id='openDesignEditor', children='Add Chart', n_clicks=0, className="me-1"),
                     dbc.Button(id='saveLayout', children='Save Layout', n_clicks=0, className="me-1", color='success'),
-                        ], style={'z-index':'1', 'position':'absolute', 'width':'100%'})
-                     ], id='design-holder')
+                        ], style={'z-index':'1', 'position':'absolute', 'width':'100%'}),
+                    dbc.Button(id='editActive', style={'display':'none'}),
+                    dbc.Button(id='syncStore', style={'display': 'none'}),
+                    dbc.Button(id='deleteTarget', style={'display': 'none'}),
+                    ], id='design-holder')
 
 app.clientside_callback(
     """
@@ -229,7 +239,7 @@ def parse_contents(contents, filename, date):
         dash_table.DataTable(
             data=df.to_dict('records'),
             columns=[{'name': i, 'id': i} for i in df.columns],
-        id='tableInfo',
+        id={'type':'tableInfo', 'index':1},
         sort_action='native',
         editable=True,),
 
@@ -287,6 +297,13 @@ app.clientside_callback(
     Output('chartDesignEditor','is_open'),
     Input('openDesignEditor','n_clicks'),
     State('chartDesignEditor','is_open'),
+    prevent_initial_call=True
+)
+
+@app.callback(
+    Output('chartDesignEditor_edit','is_open'),
+    Input('editActive','n_clicks'),
+    State('chartDesignEditor_edit','is_open'),
     prevent_initial_call=True
 )
 
@@ -363,7 +380,7 @@ def update_output(c, pl, s, n, d):
         tbl = dash_table.DataTable(
             data=df.to_dict('records'),
             columns=[{'name': i, 'id': i} for i in df.columns],
-            id='tableInfo',
+            id={'type':'tableInfo', 'index':1},
             sort_action='native',
             editable=True, )
         return [pl, tbl], go.Figure()
@@ -375,28 +392,29 @@ def update_output(c, pl, s, n, d):
         tbl = dash_table.DataTable(
             data=df.to_dict('records'),
             columns=[{'name': i, 'id': i} for i in df.columns],
-            id='tableInfo',
+            id={'type':'tableInfo', 'index':1},
             sort_action='native',
             editable=True, )
         return [s, tbl], go.Figure()
 
 
 @app.callback(
-    Output('graphingOptions','children'),
-    Input('selectChart','value'),
-    Input('tableInfo', 'data'),
+    Output({'type':'graphingOptions','index':MATCH},'children'),
+    Input({'type':'selectChart','index':MATCH},'value'),
+    Input({'type':'tableInfo', 'index':ALL}, 'data'),
     prevent_initial_call=True,
 )
 
 @app.callback(
-    Output('graphingDesignOptions','children'),
-    Input('selectDesignChart','value'),
-    Input('tableInfo', 'data'),
+    Output({'type':'graphingOptions_edit','index':MATCH},'children'),
+    Input({'type':'selectChart_edit','index':MATCH},'value'),
+    Input({'type':'tableInfo', 'index':ALL}, 'data'),
     prevent_initial_call=True,
 )
+
 def graphingOptions(chart, data):
     if chart:
-        df = pd.DataFrame.from_dict(data)
+        df = pd.DataFrame.from_dict(data[0])
         return getOpts(chart, df)
 
 @app.callback(
@@ -405,16 +423,16 @@ def graphingOptions(chart, data):
     Output('functionHelper','children'),
     Output('openErrors','style'),
     Output('openErrors','n_clicks'),
-    Input('submitEdits','n_clicks'),
-    State('tableInfo', 'data'),
-    State('graphingOptions','children'),
-    State('selectChart','value'),
+    Input({'type':'submitEdits', 'index':'design'},'n_clicks'),
+    State({'type':'tableInfo', 'index':ALL}, 'data'),
+    State({'type':'graphingOptions', 'index':'design'},'children'),
+    State({'type':'selectChart', 'index':'design'},'value'),
     State('openErrors','n_clicks'),
     prevent_initial_call=True
 )
 def updateLayout(n1, data, opts, selectChart, n2):
     if data and opts:
-        df = pd.DataFrame.from_dict(data)
+        df = pd.DataFrame.from_dict(data[0])
         df = df.infer_objects()
         figureDict = parseSelections(opts[1]['props']['children'],
                                              opts[2]['props']['children'])
@@ -430,27 +448,63 @@ def updateLayout(n1, data, opts, selectChart, n2):
 
 @app.callback(
     Output('design-area','children'),
-    Input('submitDesignEdits','n_clicks'),
-    State('tableInfo', 'data'),
-    State('graphingDesignOptions','children'),
-    State('selectDesignChart','value'),
+    Input({'type': 'submitEdits_edit', 'index': ALL}, 'n_clicks'),
+    Input('deleteTarget', 'n_clicks'),
+    State({'type':'tableInfo', 'index':ALL}, 'data'),
+    State({'type': 'graphingOptions_edit', 'index': ALL}, 'children'),
+    State({'type': 'selectChart_edit', 'index': ALL}, 'value'),
     State('design-area','children'),
+    State('focused-graph','data'),
     prevent_initial_call=True
 )
-def updateLayout(n1, data, opts, selectChart, children):
-    if data and opts:
-        df = pd.DataFrame.from_dict(data)
+def updateLayout(n1, d1, data, opts, selectChart, children, target):
+    if data and opts and ctx.triggered_id != 'deleteTarget':
+        trig = ctx.triggered_id.index
+        df = pd.DataFrame.from_dict(data[0])
         df = df.infer_objects()
-        figureDict = parseSelections(opts[1]['props']['children'],
-                                             opts[2]['props']['children'])
-        figureDict['chart'] = selectChart
 
-        figureDict['id'] = {'index':len(children), 'type':'design-charts'}
+        if trig == 'edit':
+            opts = opts[0]
+            figureDict = parseSelections(opts[1]['props']['children'],
+                                         opts[2]['props']['children'])
+            figureDict['chart'] = selectChart[0]
 
-        if not 'style' in figureDict:
-            figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
+            used = []
+            for child in children:
+                used.append(child['props']['id']['index'])
 
-        children.append(makeDCC_Graph(data, figureDict))
+            y = 0
+            while y < 1000:
+                if y not in used:
+                    break
+                y += 1
+
+
+            figureDict['id'] = {'index':y, 'type':'design-charts'}
+
+            if not 'style' in figureDict:
+                figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
+
+            children.append(makeDCC_Graph(df, figureDict))
+            return children
+        else:
+            opts = opts[1]
+            figureDict = parseSelections(opts[1]['props']['children'],
+                                         opts[2]['props']['children'])
+            figureDict['chart'] = selectChart[1]
+
+            for child in children:
+                if child['props']['id'] == json.loads(target):
+                    child['props']['figure'] = makeCharts(df, figureDict)[0]
+
+            return children
+
+    elif ctx.triggered_id == 'deleteTarget':
+        for c in range(len(children)):
+            if children[c]['props']['id'] == json.loads(target):
+                del children[c]
+                break
+
         return children
     raise PreventUpdate
 
@@ -468,6 +522,20 @@ app.clientside_callback(
     }""",
     Output('design-area', 'id'),
     Input('design-area','children')
+)
+
+app.clientside_callback(
+    """
+        function (n1) {
+            if (n1 > 0) {
+                return localStorage.getItem('focused-graph')
+            }
+            return ''
+        }
+    """,
+    Output('focused-graph','data'),
+    Input('syncStore','n_clicks'),
+    prevent_initial_call=True
 )
 
 if __name__ == '__main__':

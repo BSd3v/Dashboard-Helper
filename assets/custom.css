@@ -107,3 +107,11 @@ body {
     height:92%;
     position:absolute;
 }
+
+#design-area {
+    overflow: auto;
+}
+
+.modebar:hover {
+    display: block;
+}
