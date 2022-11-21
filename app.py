@@ -459,6 +459,7 @@ app.clientside_callback(
     """function dragging(d) {
         setTimeout(function () {
         $('#design-area .dash-graph').unbind()
+        $('#design-area .dash-graph > div:first-of-type').empty()
         $('#design-area.edit .dash-graph').each(function() {
             addEditButtons($(this).find('div')[0])
             dragElement($(this).find('.fa-up-down-left-right')[0])
