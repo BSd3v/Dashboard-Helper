@@ -77,9 +77,9 @@ def parseSelections(opts, layout):
     for inp in lay:
         if 'value' in inp['props']:
             if inp['props']['id'] == 'data_frame':
-                args.append(inp['props']['id'].replace('layout_','') + '=' + inp['props']['value'] + '')
+                args.append(inp['props']['id'].replace('layout_','') + '=' + str(inp['props']['value']) + '')
             elif inp['props']['value'] != '':
-                args.append(inp['props']['id'].replace('layout_','') + '="' + inp['props']['value'] + '"')
+                args.append(inp['props']['id'].replace('layout_','') + '="' + str(inp['props']['value']) + '"')
                 if inp['props']['value'] == 'False':
                     updateLayout[inp['props']['id'].replace('layout_', '')] = False
                 elif inp['props']['value'] == 'True':

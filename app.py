@@ -105,6 +105,7 @@ def designArea():
                                                        'width':'100%'}),
                     dcc.Graph(id='testFigure', style={'display':'none'}),
                     dcc.Store(id='focused-graph', storage_type='local'),
+                    dcc.Store(id='figures', storage_type='local', data=[]),
                      dbc.Offcanvas(['Select the chart type and options below',
                                     dcc.Dropdown(id={'index':'edit', 'type':'selectChart_edit'}, options=chartOpts),
                                     dbc.Button('Make Changes', id={'index':'edit', 'type':'submitEdits_edit'}),
@@ -169,6 +170,7 @@ def sidebar():
 
 app.layout = html.Div(id='div-app',children=[
     dcc.Location(id='url'),
+    dcc.Store(id='figureStore', data=[], storage_type='local'),
     dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"),
                color="dark", style={'position':'absolute', 'top':'0px', 'margin': '0.5%'}),
     dbc.Offcanvas(id='sidebar', children=sidebar()),
@@ -448,64 +450,81 @@ def updateLayout(n1, data, opts, selectChart, n2):
 
 @app.callback(
     Output('design-area','children'),
+    Output('figures', 'data'),
     Input({'type': 'submitEdits_edit', 'index': ALL}, 'n_clicks'),
     Input('deleteTarget', 'n_clicks'),
+    Input('figureStore', 'data'),
     State({'type':'tableInfo', 'index':ALL}, 'data'),
     State({'type': 'graphingOptions_edit', 'index': ALL}, 'children'),
     State({'type': 'selectChart_edit', 'index': ALL}, 'value'),
     State('design-area','children'),
     State('focused-graph','data'),
-    prevent_initial_call=True
+    State('figures', 'data'),
 )
-def updateLayout(n1, d1, data, opts, selectChart, children, target):
-    if data and opts and ctx.triggered_id != 'deleteTarget':
-        trig = ctx.triggered_id.index
+def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figouts):
+    if data:
         df = pd.DataFrame.from_dict(data[0])
         df = df.infer_objects()
+        if ctx.triggered_id == 'figureStore' and figs:
+            children = [makeDCC_Graph(df, i) for i in figs]
+            return children, figs
+        if data and opts and ctx.triggered_id != 'deleteTarget':
+            if len(children) == 0:
+                figouts = []
+            trig = ctx.triggered_id.index
 
-        if trig == 'edit':
-            opts = opts[0]
-            figureDict = parseSelections(opts[1]['props']['children'],
-                                         opts[2]['props']['children'])
-            figureDict['chart'] = selectChart[0]
+            if trig == 'edit':
+                opts = opts[0]
+                figureDict = parseSelections(opts[1]['props']['children'],
+                                             opts[2]['props']['children'])
+                figureDict['chart'] = selectChart[0]
 
-            used = []
-            for child in children:
-                used.append(child['props']['id']['index'])
+                used = []
+                for child in children:
+                    used.append(child['props']['id']['index'])
 
-            y = 0
-            while y < 1000:
-                if y not in used:
+                y = 0
+                while y < 1000:
+                    if y not in used:
+                        break
+                    y += 1
+
+
+                figureDict['id'] = {'index':y, 'type':'design-charts'}
+
+                if not 'style' in figureDict:
+                    figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
+
+                children.append(makeDCC_Graph(df, figureDict))
+                figouts.append(figureDict)
+                return children, figouts
+            else:
+                opts = opts[1]
+                figureDict = parseSelections(opts[1]['props']['children'],
+                                             opts[2]['props']['children'])
+                figureDict['chart'] = selectChart[1]
+
+                for child in children:
+                    if child['props']['id'] == json.loads(target):
+                        child['props']['figure'] = makeCharts(df, figureDict)[0]
+                figouts = figouts.copy()
+                for f in range(len(figouts)):
+                    if figouts[f]['id'] == json.loads(target):
+                        figouts[f] = figureDict
+                        figouts[f]['id'] = json.loads(target)
+
+                return children, figouts
+
+        elif ctx.triggered_id == 'deleteTarget':
+            for c in range(len(children)):
+                if children[c]['props']['id'] == json.loads(target):
+                    del children[c]
                     break
-                y += 1
+            for fig in figouts:
+                if fig['id'] == json.loads(target):
+                    figouts.remove(fig)
 
-
-            figureDict['id'] = {'index':y, 'type':'design-charts'}
-
-            if not 'style' in figureDict:
-                figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
-
-            children.append(makeDCC_Graph(df, figureDict))
-            return children
-        else:
-            opts = opts[1]
-            figureDict = parseSelections(opts[1]['props']['children'],
-                                         opts[2]['props']['children'])
-            figureDict['chart'] = selectChart[1]
-
-            for child in children:
-                if child['props']['id'] == json.loads(target):
-                    child['props']['figure'] = makeCharts(df, figureDict)[0]
-
-            return children
-
-    elif ctx.triggered_id == 'deleteTarget':
-        for c in range(len(children)):
-            if children[c]['props']['id'] == json.loads(target):
-                del children[c]
-                break
-
-        return children
+            return children, figouts
     raise PreventUpdate
 
 
@@ -536,6 +555,47 @@ app.clientside_callback(
     Output('focused-graph','data'),
     Input('syncStore','n_clicks'),
     prevent_initial_call=True
+)
+
+app.clientside_callback(
+    """
+    function saveLayout(n1) {
+        if (n1 > 0) {
+            figures = JSON.parse(localStorage.getItem('figures'))
+            figureData = []
+            children = $("#design-area").children()
+            ref = $("#design-area")[0].getBoundingClientRect()
+            for (y=0; y < figures.length; y++) {
+                for (x=0; x < children.length; x++) {
+                    if (JSON.stringify(figures[y].id) == children[x].id) {
+                        styling = children[x].style.cssText.split('; ')
+                        style = {}
+                        for (z=0; z<styling.length;z++) {
+                            if (styling[z].split(': ')[1].split(';')[0].includes('px')) {
+                                if (['height', 'top'].includes(styling[z].split(':')[0])) {
+                                    adj = (parseFloat(styling[z].split(': ')[1].split(';')[0]) / ref.height)*100 + '%'
+                                } else {
+                                    adj = (parseFloat(styling[z].split(': ')[1].split(';')[0]) / ref.width)*100 + '%'
+                                }
+                                style[styling[z].split(':')[0]] = adj
+                            } else {
+                                style[styling[z].split(':')[0]] = styling[z].split(': ')[1].split(';')[0]
+                            }
+                        }
+                        figures[y]['style'] = style
+                        break
+                    }
+                }
+                figureData.push(figures[y])
+            }
+            return figureData
+        }
+        return JSON.parse(localStorage.getItem('figureStore'))
+    }
+    """,
+    Output('figureStore','data'),
+    Input('saveLayout','n_clicks'),
+    prevent_inital_call=True
 )
 
 if __name__ == '__main__':
