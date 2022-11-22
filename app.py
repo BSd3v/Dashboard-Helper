@@ -170,6 +170,7 @@ def sidebar():
 
 app.layout = html.Div(id='div-app',children=[
     dcc.Location(id='url'),
+    dcc.Store(id='dataInfo',data=[], storage_type='local'),
     dcc.Store(id='figureStore', data=[], storage_type='local'),
     dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"),
                color="dark", style={'position':'absolute', 'top':'0px', 'margin': '0.5%'}),
@@ -243,7 +244,7 @@ def parse_contents(contents, filename, date):
             columns=[{'name': i, 'id': i} for i in df.columns],
         id={'type':'tableInfo', 'index':1},
         sort_action='native',
-        editable=True,),
+        editable=True,)
 
         # html.Hr(),  # horizontal line
         #
@@ -254,7 +255,7 @@ def parse_contents(contents, filename, date):
         #     'wordBreak': 'break-all'
         # }),
     ], style={'width':'98%', 'margin':'1%'}
-)
+), df
 
 app.clientside_callback(
     """
@@ -367,6 +368,7 @@ app.clientside_callback(
 
 @app.callback(Output('contentDisplay', 'children'),
               Output('testFigure','figure'),
+                Output('dataInfo','data'),
               [Input('uploadContent', 'contents')],
               Input('preloadData', 'value'),
               Input('stockQuery','value'),
@@ -375,8 +377,8 @@ app.clientside_callback(
               prevent_initial_call=True)
 def update_output(c, pl, s, n, d):
     if c is not None and ctx.triggered_id == 'uploadContent':
-        children = parse_contents(c, n, d)
-        return children, go.Figure()
+        children, df = parse_contents(c, n, d)
+        return children, go.Figure(), df.to_dict('records')
     elif ctx.triggered_id == 'preloadData':
         df = preload[pl]
         tbl = dash_table.DataTable(
@@ -385,7 +387,7 @@ def update_output(c, pl, s, n, d):
             id={'type':'tableInfo', 'index':1},
             sort_action='native',
             editable=True, )
-        return [pl, tbl], go.Figure()
+        return [pl, tbl], go.Figure(), df.to_dict('records')
     elif ctx.triggered_id == 'stockQuery':
         df = yf.Ticker(s).history(period='max').reset_index()
         df['Date'] = pd.to_datetime(df['Date'])
@@ -397,7 +399,7 @@ def update_output(c, pl, s, n, d):
             id={'type':'tableInfo', 'index':1},
             sort_action='native',
             editable=True, )
-        return [s, tbl], go.Figure()
+        return [s, tbl], go.Figure(), df.to_dict('records')
 
 
 @app.callback(
@@ -454,7 +456,7 @@ def updateLayout(n1, data, opts, selectChart, n2):
     Input({'type': 'submitEdits_edit', 'index': ALL}, 'n_clicks'),
     Input('deleteTarget', 'n_clicks'),
     Input('figureStore', 'data'),
-    State({'type':'tableInfo', 'index':ALL}, 'data'),
+    State('dataInfo', 'data'),
     State({'type': 'graphingOptions_edit', 'index': ALL}, 'children'),
     State({'type': 'selectChart_edit', 'index': ALL}, 'value'),
     State('design-area','children'),
@@ -463,7 +465,7 @@ def updateLayout(n1, data, opts, selectChart, n2):
 )
 def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figouts):
     if data:
-        df = pd.DataFrame.from_dict(data[0])
+        df = pd.DataFrame.from_dict(data)
         df = df.infer_objects()
         if ctx.triggered_id == 'figureStore' and figs:
             children = [makeDCC_Graph(df, i) for i in figs]
