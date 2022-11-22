@@ -31,101 +31,12 @@ preload = {"carshare":px.data.carshare(),
     "tips":px.data.tips(),
     "wind":px.data.wind()}
 
-offCanvStyle= {'border-radius':'15px'}
 
-app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, pages_folder='',
+
+app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, #pages_folder='',
            external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
             external_scripts=["https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"]
            )
-
-
-def home():
-    return [
-        dbc.Offcanvas(['Select the chart type and options below',
-                       dcc.Dropdown(id={'type':'selectChart', 'index':'design'}, options=chartOpts),
-                       dbc.Button('Make Changes', id={'type':'submitEdits', 'index':'design'}),
-                       acc(id={'type':'graphingOptions', 'index':'design'}),
-                       ], id='chartEditor', style=offCanvStyle),
-        dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
-        dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
-                   style={'margin-left': '1%'}),
-        dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
-                   style={'float': 'right', 'display': 'none', 'margin-right': '2%'}, className="me-1"),
-        dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
-        html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
-                 style={'display': 'none'}),
-        html.Div([], id='page-content')]
-
-dash.register_page('Data and Chart Explorer', path='/', layout=home)
-
-def exmaple1():
-    example = """
-df = px.data.gapminder()
-
-return makeDCC_Graph(df,
-    {"figure": 
-        {"x": "country",
-        "y": "lifeExp",
-        "color": "continent",
-        "size": "pop",
-        "animation_frame": "year",
-        "template":"presentation"},
-    "layout": {},
-    "chart": "px.scatter",
-    'id':'testing',
-    'style':{'overflow':'auto',
-            'height':'85%',
-            'width':'80%',
-            'border':'1px solid black', 
-            'position':'absolute'
-            }
-    })"""
-    df = px.data.gapminder()
-    return [makeDCC_Graph(df,
-                          {"figure": {"x": "country",
-                                      "y": "lifeExp",
-                                      "color": "continent",
-                                      "size": "pop",
-                                      "animation_frame": "year",
-                                      "template":"presentation"},
-                           "layout": {},
-                           "chart": "px.scatter", 'id': 'testing',
-                           'style': {'overflow': 'auto',
-                                     'height': '85%', 'width': '80%',
-                                     'border': '1px solid black', 'position': 'absolute'}}),
-            dmc.Prism(example,
-                      language='python', style={'float': 'right', 'width': '18%'})]
-
-dash.register_page('Example', path='/emaple1', layout=exmaple1)
-
-def designArea():
-    return html.Div([
-                     html.Div(id='design-area', children=[], style={'background-color':'#c5c6d0',
-                                                       'position':'absolute', 'height':'100%',
-                                                       'width':'100%'}),
-                    dcc.Graph(id='testFigure', style={'display':'none'}),
-                    dcc.Store(id='focused-graph', storage_type='local'),
-                    dcc.Store(id='figures', storage_type='local', data=[]),
-                     dbc.Offcanvas(['Select the chart type and options below',
-                                    dcc.Dropdown(id={'index':'edit', 'type':'selectChart_edit'}, options=chartOpts),
-                                    dbc.Button('Make Changes', id={'index':'edit', 'type':'submitEdits_edit'}),
-                                    acc(id={'index':'edit','type':'graphingOptions_edit'}),
-                                    ], id='chartDesignEditor', style=offCanvStyle),
-                    dbc.Offcanvas(['Select the chart type and options below',
-                                   dcc.Dropdown(id={'index': '2', 'type': 'selectChart_edit'}, options=chartOpts),
-                                   dbc.Button('Make Changes', id={'index': '2', 'type': 'submitEdits_edit'}),
-                                   acc(id={'index': '2', 'type': 'graphingOptions_edit'}),
-                                   ], id='chartDesignEditor_edit', style=offCanvStyle),
-                    html.Div([
-                    dbc.Button('Toggle Edit Mode', id='toggleEdit', color="warning", className="me-1", n_clicks=0),
-                    dbc.Button(id='openDesignEditor', children='Add Chart', n_clicks=0, className="me-1"),
-                    dbc.Button(id='saveLayout', children='Save Layout', n_clicks=0, className="me-1", color='success'),
-                        ], style={'z-index':'1', 'position':'absolute', 'width':'100%'}),
-                    dbc.Button(id='editActive', style={'display':'none'}),
-                    dbc.Button(id='syncStore', style={'display': 'none'}),
-                    dbc.Button(id='deleteTarget', style={'display': 'none'}),
-                    ], id='design-holder')
-
 app.clientside_callback(
     """
         function (n1, c) {
@@ -151,15 +62,6 @@ app.clientside_callback(
     State('design-area','className'),
     prevent_intial_call=True
 )
-def toggleEdit(n1, c):
-    if n1 > 0:
-        if c:
-            if c == 'edit':
-                return '', ''
-        return 'edit','edit'
-    return dash.no_update, dash.no_update
-
-dash.register_page('Designer', path='/design_area', layout=designArea)
 
 def sidebar():
     return dbc.Nav(
