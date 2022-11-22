@@ -80,8 +80,8 @@ app.layout = html.Div(id='div-app',children=[
     html.Div(id='persistenceClear'),
     html.H2(['Data and Chart Explorer',
              dbc.Button('Toggle Data Options', id='collapseData',
-                                                  color="warning", style={'margin-left':'2%'})],
-            style={'text-align':'center', 'width':'100%', 'margin-top':'10px'}),
+                                                  color="warning", style={'marginLeft':'2%'})],
+            style={'textAlign':'center', 'width':'100%', 'marginTop':'10px'}),
     dbc.Collapse(id='dataOptions',children=[
     dbc.Row([dbc.Col([
     dcc.Upload(id='uploadContent',
@@ -97,21 +97,21 @@ app.layout = html.Div(id='div-app',children=[
                    'borderStyle': 'dashed',
                    'borderRadius': '5px',
                    'textAlign': 'center',
-                   'margin-left':'1%',
-                    'margin-right':'1%',
-                    'margin-top':'1%',
+                   'marginLeft':'1%',
+                    'marginRight':'1%',
+                    'marginTop':'1%',
                    'cursor':'pointer',
-                   'background-color':'white'
+                   'backgroundColor':'white'
                },
                )]),dbc.Col([
     dmc.Select(label='Plotly Datasets:',id='preloadData', data=list(preload.keys()),
-               style={'margin-left':'1%', 'margin-right':'1%', 'width':'98%',
-                      'margin-bottom':'1%',})]),dbc.Col([
+               style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
+                      'marginBottom':'1%',})]),dbc.Col([
     dmc.TextInput(label='Realtime Stock Info', placeholder='Ticker', id='stockQuery',
-                  style={'margin-left':'1%', 'margin-right':'1%', 'width':'98%',
-                      'margin-bottom':'1%'}),
-        ])], style={'background-color':'#c5c6d0', 'margin-left':'1%',
-                    'margin-right':'1%'}),
+                  style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
+                      'marginBottom':'1%'}),
+        ])], style={'backgroundColor':'#c5c6d0', 'marginLeft':'1%',
+                    'marginRight':'1%'}),
     html.Div(id='contentDisplay', style={'maxHeight': '25vh', 'overflowY': 'auto',
                                                  'margin': '1%',
                                                  'border': '1pt solid silver'},
@@ -206,13 +206,6 @@ app.clientside_callback(
 )
 
 @app.callback(
-    Output('chartDesignEditor_edit','is_open'),
-    Input('editActive','n_clicks'),
-    State('chartDesignEditor_edit','is_open'),
-    prevent_initial_call=True
-)
-
-@app.callback(
     Output('sidebar','is_open'),
     Input('sidebarButton','n_clicks'),
     State('sidebar','is_open'),
@@ -228,6 +221,23 @@ app.clientside_callback(
 def openEditor(n1, isOpen):
     if n1 > 0:
         return not isOpen
+    return isOpen
+
+@app.callback(
+    Output('chartDesignEditor_edit','is_open'),
+    Output({'type':'selectChart_edit','index':'2'},'value'),
+    Input('editActive','n_clicks'),
+    State('chartDesignEditor_edit','is_open'),
+    State('focused-graph', 'data'),
+    State('figures', 'data'),
+    prevent_initial_call=True
+)
+def openEditor_edit(n1, isOpen, id, figs):
+    if n1 > 0:
+        for f in figs:
+            if f['id'] == json.loads(id):
+                chart = f['chart']
+        return not isOpen, chart
     return isOpen
 
 
@@ -307,20 +317,29 @@ def update_output(c, pl, s, n, d):
 @app.callback(
     Output({'type':'graphingOptions','index':MATCH},'children'),
     Input({'type':'selectChart','index':MATCH},'value'),
-    Input({'type':'tableInfo', 'index':ALL}, 'data'),
-    prevent_initial_call=True,
-)
-
-@app.callback(
-    Output({'type':'graphingOptions_edit','index':MATCH},'children'),
-    Input({'type':'selectChart_edit','index':MATCH},'value'),
-    Input({'type':'tableInfo', 'index':ALL}, 'data'),
+    Input('dataInfo', 'data'),
     prevent_initial_call=True,
 )
 
 def graphingOptions(chart, data):
     if chart:
-        df = pd.DataFrame.from_dict(data[0])
+        df = pd.DataFrame.from_dict(data)
+        return getOpts(chart, df)
+
+@app.callback(
+    Output({'type':'graphingOptions_edit','index':MATCH},'children'),
+    Input({'type':'selectChart_edit','index':MATCH},'value'),
+    Input('dataInfo', 'data'),
+    State('focused-graph', 'data'),
+    State('figures', 'data'),
+    prevent_initial_call=True,
+)
+
+def graphingOptions_edit(chart, data, id, figs):
+    if chart:
+        df = pd.DataFrame.from_dict(data)
+        if ctx.triggered_id['index'] == '2':
+            return getOpts(chart, df, id, figs)
         return getOpts(chart, df)
 
 @app.callback(
@@ -346,7 +365,7 @@ def updateLayout(n1, data, opts, selectChart, n2):
         fig, error, func_string = makeCharts(df, figureDict)
         style = {'float': 'right', 'display': 'none'}
         if error != '':
-            style = {'float':'right', 'display':'inline-block', 'margin-right':'1%'}
+            style = {'float':'right', 'display':'inline-block', 'marginRight':'1%'}
         else:
             n2 = 0
         return dcc.Graph(figure=fig, id='testFigure'), error, func_string, style, n2

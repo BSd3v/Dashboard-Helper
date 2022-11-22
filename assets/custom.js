@@ -5,8 +5,8 @@ function addEditButtons(el) {
 
     $(el).find('.fa-pen-to-square').on('click', function() {
     localStorage.setItem('focused-graph',$(this).closest('.dash-graph')[0].id)
-    setTimeout($('#syncStore').click(),100)
-    setTimeout($("#editActive").click(), 300)})
+    setTimeout(function () {$('#syncStore').click()},100)
+    setTimeout(function() {$("#editActive").click()}, 300)})
 
     $(el).find('.fa-trash').on('click', function() {
         localStorage.setItem('focused-graph',$(this).closest('.dash-graph')[0].id)

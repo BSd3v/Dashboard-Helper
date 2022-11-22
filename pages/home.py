@@ -22,7 +22,7 @@ preload = {"carshare":px.data.carshare(),
     "tips":px.data.tips(),
     "wind":px.data.wind()}
 
-offCanvStyle = {'border-radius':'15px'}
+offCanvStyle = {'borderRadius':'15px'}
 
 
 
@@ -35,9 +35,9 @@ def layout():
             ], id='chartEditor', style=offCanvStyle),
             dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
             dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
-            style={'margin-left': '1%'}),
+            style={'marginLeft': '1%'}),
             dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
-            style={'float': 'right', 'display': 'none', 'margin-right': '2%'}, className="me-1"),
+            style={'float': 'right', 'display': 'none', 'marginRight': '2%'}, className="me-1"),
             dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
             html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
             style={'display': 'none'}),

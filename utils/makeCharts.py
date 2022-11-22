@@ -92,9 +92,18 @@ def parseSelections(opts, layout):
 
     return {'figure': info, 'layout':updateLayout}
 
-def getOpts(selectChart, data={}):
+def getOpts(selectChart, data={}, id=None, figs=None):
     layout = []
     sig = signature(findFunc(selectChart))
+
+    if id:
+        for f in figs:
+            if f['id'] == json.loads(id):
+                figureData = f['figure']
+                layData = f['layout']
+    else:
+        figureData = {}
+        layData = {}
 
     for param in sig.parameters.values():
         layout.append(html.Div(str(param).split('=')[0] + ':'))
@@ -103,34 +112,42 @@ def getOpts(selectChart, data={}):
                                 placeholder=str(param).split('=')[0],
                                     value='data', disabled=True))
         else:
+            if str(param).split('=')[0] in figureData:
+                val = figureData[str(param).split('=')[0]]
+            else:
+                val = ''
             if str(param).split('=')[0] in cols or str(param).split('=')[0] in multiCols:
                 if str(param).split('=')[0] in multiCols:
-                    layout.append(dcc.Dropdown(id=str(param).split('=')[0],
+                    layout.append(dcc.Dropdown(id=str(param).split('=')[0], value=val,
                                             placeholder=str(param).split('=')[0],
                                             persistence='memory', options=data.columns, multi=True))
                 else:
-                    layout.append(dcc.Dropdown(id=str(param).split('=')[0],
+                    layout.append(dcc.Dropdown(id=str(param).split('=')[0], value=val,
                                                placeholder=str(param).split('=')[0],
                                                persistence='memory', options=data.columns))
             elif str(param).split('=')[0] == 'template':
-                layout.append(dcc.Dropdown(id=str(param).split('=')[0],
+                layout.append(dcc.Dropdown(id=str(param).split('=')[0], value=val,
                                            placeholder=str(param).split('=')[0],
                                            persistence='memory', options=[t for t in templates]))
 
             else:
-                layout.append(dcc.Input(id=str(param).split('=')[0],
+                layout.append(dcc.Input(id=str(param).split('=')[0], value=val,
                                     placeholder=str(param).split('=')[0],
                                         persistence='memory'))
     updateLayout = []
 
     for param in layoutList:
         updateLayout.append(html.Div(param + ':'))
+        if param in layData:
+            val = layData[str(param).split('=')[0]]
+        else:
+            val = ''
         if param == 'template':
                 updateLayout.append(dcc.Dropdown(id='layout_' + param,
-                                           placeholder=param,
+                                           placeholder=param, value=val,
                                            persistence='memory', options=[t for t in templates]))
         else:
-            updateLayout.append(dcc.Input(id='layout_' + param,
+            updateLayout.append(dcc.Input(id='layout_' + param, value=val,
                                 placeholder=param, persistence='memory',))
     return [dmc.AccordionItem([dcc.Link('API Reference', href=f'https://plotly.com/python-api-reference/generated/plotly.'
         f'express.{selectChart.replace("px.","")}.html#plotly.express.{selectChart.replace("px.","")}', target='_blank'),

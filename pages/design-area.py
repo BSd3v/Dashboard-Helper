@@ -5,7 +5,7 @@ from pages.home import offCanvStyle, chartOpts, acc
 
 def layout():
     return html.Div([
-                     html.Div(id='design-area', children=[], style={'background-color':'#c5c6d0',
+                     html.Div(id='design-area', children=[], style={'backgroundColor':'#c5c6d0',
                                                        'position':'absolute', 'height':'100%',
                                                        'width':'100%'}),
                     dcc.Graph(id='testFigure', style={'display':'none'}),
@@ -25,7 +25,7 @@ def layout():
                     dbc.Button('Toggle Edit Mode', id='toggleEdit', color="warning", className="me-1", n_clicks=0),
                     dbc.Button(id='openDesignEditor', children='Add Chart', n_clicks=0, className="me-1"),
                     dbc.Button(id='saveLayout', children='Save Layout', n_clicks=0, className="me-1", color='success'),
-                        ], style={'z-index':'1', 'position':'absolute', 'width':'100%'}),
+                        ], style={'zIndex':'1', 'position':'absolute', 'width':'100%'}),
                     dbc.Button(id='editActive', style={'display':'none'}),
                     dbc.Button(id='syncStore', style={'display': 'none'}),
                     dbc.Button(id='deleteTarget', style={'display': 'none'}),
