@@ -1,7 +1,8 @@
 import dash
 from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
-from pages.home import offCanvStyle, chartOpts, acc
+from pages.home import offCanvStyle, chartOpts
+import dash_mantine_components as dmc
 
 def layout():
     return html.Div([
@@ -14,12 +15,12 @@ def layout():
                      dbc.Offcanvas(['Select the chart type and options below',
                                     dcc.Dropdown(id={'index':'edit', 'type':'selectChart_edit'}, options=chartOpts),
                                     dbc.Button('Make Changes', id={'index':'edit', 'type':'submitEdits_edit'}),
-                                    acc(id={'index':'edit','type':'graphingOptions_edit'}),
+                                    dmc.Accordion(id={'index':'edit','type':'graphingOptions_edit'}),
                                     ], id='chartDesignEditor', style=offCanvStyle),
                     dbc.Offcanvas(['Select the chart type and options below',
                                    dcc.Dropdown(id={'index': '2', 'type': 'selectChart_edit'}, options=chartOpts),
                                    dbc.Button('Make Changes', id={'index': '2', 'type': 'submitEdits_edit'}),
-                                   acc(id={'index': '2', 'type': 'graphingOptions_edit'}),
+                                   dmc.Accordion(id={'index': '2', 'type': 'graphingOptions_edit'}),
                                    ], id='chartDesignEditor_edit', style=offCanvStyle),
                     html.Div([
                     dbc.Button('Toggle Edit Mode', id='toggleEdit', color="warning", className="me-1", n_clicks=0),

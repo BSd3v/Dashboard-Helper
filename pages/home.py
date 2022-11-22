@@ -1,7 +1,7 @@
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
-from dash_mantine_components import Accordion as acc
+import dash_mantine_components as dmc
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -31,7 +31,7 @@ def layout():
         dbc.Offcanvas(['Select the chart type and options below',
             dcc.Dropdown(id={'type':'selectChart', 'index':'design'}, options=chartOpts),
             dbc.Button('Make Changes', id={'type':'submitEdits', 'index':'design'}),
-            acc(id={'type':'graphingOptions', 'index':'design'}),
+            dmc.Accordion(id={'type':'graphingOptions', 'index':'design'}),
             ], id='chartEditor', style=offCanvStyle),
             dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
             dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",

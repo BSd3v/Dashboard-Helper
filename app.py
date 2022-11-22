@@ -5,7 +5,6 @@ import dash
 from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
 import dash_bootstrap_components as dbc
-from dash_mantine_components import Accordion as acc
 import dash_mantine_components as dmc
 from utils.makeCharts import makeCharts, getOpts, parseSelections, makeDCC_Graph
 import yfinance as yf
