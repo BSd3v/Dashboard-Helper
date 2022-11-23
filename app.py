@@ -72,6 +72,8 @@ def sidebar():
 
 app.layout = html.Div(id='div-app',children=[
     dcc.Location(id='url'),
+    dbc.Modal(id='statusAlert', children=[html.Div(id='alert', className='alert-success')],
+              is_open=False, centered=True),
     dcc.Store(id='dataInfo',data=[], storage_type='local'),
     dcc.Store(id='figureStore', data=[], storage_type='local'),
     dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"),
@@ -395,7 +397,7 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
     if data:
         df = pd.DataFrame.from_dict(data)
         df = df.infer_objects()
-        if ctx.triggered_id == 'figureStore' and figs:
+        if ctx.triggered_id == 'figureStore':
             children = [makeDCC_Graph(df, i) for i in figs]
             return children, figs
         if data and opts and ctx.triggered_id != 'deleteTarget':
@@ -518,12 +520,14 @@ app.clientside_callback(
                 }
                 figureData.push(figures[y])
             }
-            return figureData
+            return [figureData, 'Saved Successfully', true]
         }
-        return JSON.parse(localStorage.getItem('figureStore'))
+        return [JSON.parse(localStorage.getItem('figureStore')), '', false]
     }
     """,
     Output('figureStore','data'),
+    Output('alert', 'children'),
+    Output('statusAlert','is_open'),
     Input('saveLayout','n_clicks'),
     prevent_inital_call=True
 )

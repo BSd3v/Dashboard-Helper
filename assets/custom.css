@@ -25,13 +25,16 @@ pre {
 
 #design-area .dash-graph {
   box-shadow: 5px 2px 15px black;
-  position: relative;
+  position: absolute;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 #design-area.edit .dash-graph {
   resize: both;
-  overflow: auto;
-  padding-right: 1%;
+  padding-right: 30px;
+  padding-bottom: 0.5%;
+  border: 2pt dashed black;
 }
 
 #design-area.edit .dash-graph>div:first-of-type {
@@ -42,11 +45,6 @@ pre {
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-#design-area.edit .dash-graph.active {
-    width: 0;
-    height: 0;
 }
 
 #design-area.edit .fa-solid {
@@ -65,6 +63,9 @@ pre {
 #design-area.edit .dash-graph .js-plotly-plot {
     z-index: -1;
     opacity: 50%;
+    overflow: hidden;
+    max-height: 100%;
+    max-width: 100%;
 }
 
 .nav-pills .nav-link.active {
@@ -122,4 +123,12 @@ body {
 
 .modebar:hover {
     display: block;
+}
+
+#statusAlert #alert {
+    height: 100%;
+    font-size: 1.5em;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
 }
