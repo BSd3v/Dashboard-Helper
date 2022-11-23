@@ -30,8 +30,9 @@ def layout():
     return [
         dbc.Offcanvas(['Select the chart type and options below',
             dcc.Dropdown(id={'type':'selectChart', 'index':'design'}, options=chartOpts),
-            dbc.Button('Make Changes', id={'type':'submitEdits', 'index':'design'}),
-            dmc.Accordion(id={'type':'graphingOptions', 'index':'design'}),
+            dmc.Accordion(id={'type':'graphingOptions', 'index':'design'}, value="chartOptions"),
+            dbc.Button('Make Changes', id={'type': 'submitEdits', 'index': 'design'},
+                       className='m-3'),
             ], id='chartEditor', style=offCanvStyle),
             dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
             dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
@@ -39,8 +40,7 @@ def layout():
             dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
             style={'float': 'right', 'display': 'none', 'marginRight': '2%'}, className="me-1"),
             dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
-            html.Div(id='errorsCanvas', children=[html.Pre(id='errors')],
-            style={'display': 'none'}),
+            html.Div(id='errorsCanvas', children=[html.Pre(id='errors')]),
             html.Div([dcc.Graph(id='testFigure')], id='page-content')
     ]
 

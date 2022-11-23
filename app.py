@@ -1,6 +1,6 @@
 import json
 
-from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container, MATCH, ALL
+from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container, MATCH, ALL, DiskcacheManager, CeleryManager
 import dash
 from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
@@ -9,6 +9,7 @@ import dash_mantine_components as dmc
 from utils.makeCharts import makeCharts, getOpts, parseSelections, makeDCC_Graph
 import yfinance as yf
 from dash_iconify import DashIconify
+import os
 
 import datetime, base64, io, pandas as pd
 
@@ -33,7 +34,7 @@ preload = {"carshare":px.data.carshare(),
 
 
 app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, #pages_folder='',
-           external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+            external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
             external_scripts=["https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"]
            )
 app.clientside_callback(
@@ -82,7 +83,7 @@ app.layout = html.Div(id='div-app',children=[
                                                   color="warning", style={'marginLeft':'2%'})],
             style={'textAlign':'center', 'width':'100%', 'marginTop':'10px'}),
     dbc.Collapse(id='dataOptions',children=[
-    dbc.Row([dbc.Col([
+    dcc.Loading([dbc.Row([dbc.Col([
     dcc.Upload(id='uploadContent',
                children=html.Div([
                    'Drag and Drop or ',
@@ -102,19 +103,24 @@ app.layout = html.Div(id='div-app',children=[
                    'cursor':'pointer',
                    'backgroundColor':'white'
                },
-               )]),dbc.Col([
-    dmc.Select(label='Plotly Datasets:',id='preloadData', data=list(preload.keys()),
+               )]),dbc.Col([html.Label('Plotly Datasets:',style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
+                      'marginBottom':'1%',}),
+    dmc.Select(id='preloadData', data=list(preload.keys()),
                style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
-                      'marginBottom':'1%',})]),dbc.Col([
-    dmc.TextInput(label='Realtime Stock Info', placeholder='Ticker', id='stockQuery',
+                      'marginBottom':'1%',})]),dbc.Col([html.Label('Realtime Stock Info:',
+                                                                   style={'marginLeft': '1%', 'marginRight': '1%',
+                                                                          'width': '98%',
+                                                                          'marginBottom': '1%', }
+                                                                   ),
+    dcc.Input(placeholder='Ticker', id='stockQuery',
                   style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
-                      'marginBottom':'1%'}),
+                      'marginBottom':'1%'}, debounce=True),
         ])], style={'backgroundColor':'#c5c6d0', 'marginLeft':'1%',
-                    'marginRight':'1%'}),
+                    'marginRight':'1%'}, id='infoLoader'),
     html.Div(id='contentDisplay', style={'maxHeight': '25vh', 'overflowY': 'auto',
                                                  'margin': '1%',
                                                  'border': '1pt solid silver'},
-                     )], is_open=True),
+                     )], id='loadInfoSpinner')], is_open=True),
     html.Div(page_container, style={'margin':'1%', 'height':'98%', 'width':'98%'})
 ], style={'padding':'0px'})
 
@@ -251,7 +257,7 @@ def openErrors(n1, s):
         if s == {'display':'none'}:
             return {'display': 'block'}
         return {'display':'none'}
-    return {'display':'none'}
+    return dash.no_update
 
 app.clientside_callback(
     """function () {
@@ -278,14 +284,18 @@ app.clientside_callback(
 
 
 @app.callback(Output('contentDisplay', 'children'),
-              Output('testFigure','figure'),
+                Output('testFigure','figure'),
                 Output('dataInfo','data'),
-              [Input('uploadContent', 'contents')],
-              Input('preloadData', 'value'),
-              Input('stockQuery','value'),
-              [State('uploadContent', 'filename'),
-               State('uploadContent', 'last_modified')],
-              prevent_initial_call=True)
+                [Input('uploadContent', 'contents')],
+                Input('preloadData', 'value'),
+                Input('stockQuery','value'),
+                [State('uploadContent', 'filename'),
+                State('uploadContent', 'last_modified')],
+                running=[
+                  (Output("loadInfoSpinner", "loading_state"), {'is_loading':True}, {'is_loading':False}),
+                  (Output('contentDisplay', 'className'), 'hidden', '')
+                ],
+                prevent_initial_call=True)
 def update_output(c, pl, s, n, d):
     if c is not None and ctx.triggered_id == 'uploadContent':
         children, df = parse_contents(c, n, d)
@@ -346,20 +356,18 @@ def graphingOptions_edit(chart, data, id, figs):
     Output('errors','children'),
     Output('functionHelper','children'),
     Output('openErrors','style'),
-    Output('openErrors','n_clicks'),
     Input({'type':'submitEdits', 'index':'design'},'n_clicks'),
     State({'type':'tableInfo', 'index':ALL}, 'data'),
     State({'type':'graphingOptions', 'index':'design'},'children'),
     State({'type':'selectChart', 'index':'design'},'value'),
-    State('openErrors','n_clicks'),
     prevent_initial_call=True
 )
-def updateLayout(n1, data, opts, selectChart, n2):
+def updateLayout(n1, data, opts, selectChart):
     if data and opts:
         df = pd.DataFrame.from_dict(data[0])
         df = df.infer_objects()
-        figureDict = parseSelections(opts[1]['props']['children'],
-                                             opts[2]['props']['children'])
+        figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
+                                             opts[1]['props']['children'][1]['props']['children'])
         figureDict['chart'] = selectChart
         fig, error, func_string = makeCharts(df, figureDict)
         style = {'float': 'right', 'display': 'none'}
@@ -367,7 +375,7 @@ def updateLayout(n1, data, opts, selectChart, n2):
             style = {'float':'right', 'display':'inline-block', 'marginRight':'1%'}
         else:
             n2 = 0
-        return dcc.Graph(figure=fig, id='testFigure'), error, func_string, style, n2
+        return dcc.Graph(figure=fig, id='testFigure'), error, func_string, style
     raise PreventUpdate
 
 @app.callback(
@@ -397,8 +405,8 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
 
             if trig == 'edit':
                 opts = opts[0]
-                figureDict = parseSelections(opts[1]['props']['children'],
-                                             opts[2]['props']['children'])
+                figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
+                                             opts[1]['props']['children'][1]['props']['children'])
                 figureDict['chart'] = selectChart[0]
 
                 used = []
@@ -422,8 +430,8 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
                 return children, figouts
             else:
                 opts = opts[1]
-                figureDict = parseSelections(opts[1]['props']['children'],
-                                             opts[2]['props']['children'])
+                figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
+                                             opts[1]['props']['children'][1]['props']['children'])
                 figureDict['chart'] = selectChart[1]
 
                 for child in children:

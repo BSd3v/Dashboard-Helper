@@ -44,11 +44,7 @@ def createGo(selectChart, **kwargs) -> go.Figure:
 
 def parseSelections(opts, layout):
     args = []
-    for div in opts:
-        if 'id' in div['props']:
-            if div['props']['id'] == 'details':
-                dets = div['props']['children']
-                break
+    dets = opts['props']['children']
 
     info = {}
     for inp in dets:
@@ -68,11 +64,7 @@ def parseSelections(opts, layout):
                         info[inp['props']['id']] = inp['props']['value']
 
     updateLayout = {}
-    for div in layout:
-        if 'id' in div['props']:
-            if div['props']['id'] == 'layout':
-                lay = div['props']['children']
-                break
+    lay = layout['props']['children']
 
     for inp in lay:
         if 'value' in inp['props']:
@@ -149,19 +141,25 @@ def getOpts(selectChart, data={}, id=None, figs=None):
         else:
             updateLayout.append(dcc.Input(id='layout_' + param, value=val,
                                 placeholder=param, persistence='memory',))
-    return [dmc.AccordionItem([dcc.Link('API Reference', href=f'https://plotly.com/python-api-reference/generated/plotly.'
-        f'express.{selectChart.replace("px.","")}.html#plotly.express.{selectChart.replace("px.","")}', target='_blank'),
-                               html.Br(),
-                              dcc.Link('Plotly Example Docs', href='https://plotly.com/python/', target='_blank'),
-                               html.Br(),
-                               dcc.Link('Layout References',
-                                        href='https://plotly.com/python-api-reference/generated/plotly.graph_objects.Layout.html', target='_blank')
-                               ]
-                              ,label='Chart Info'),
-        dmc.AccordionItem([html.Div(layout, style={'maxHeight':'50vh', 'overflowY':'auto'}, id='details')],
-                              label='Chart Options'),
-            dmc.AccordionItem([html.Div(updateLayout, style={'maxHeight': '50vh', 'overflowY': 'auto'}, id='layout')],
-                              label='Layout Options')
+    return [
+        dmc.AccordionItem([dmc.AccordionControl('Chart Options'),
+                            dmc.AccordionPanel(html.Div(layout, style={'maxHeight':'50vh', 'overflowY':'auto'}, id='details')),
+                              ], value='chartOptions'),
+            dmc.AccordionItem([dmc.AccordionControl('Layout Options'),
+                               dmc.AccordionPanel(html.Div(updateLayout, style={'maxHeight': '50vh', 'overflowY': 'auto'}, id='layout')),
+                              ], value='layoutOptions'),
+        dmc.AccordionItem([dmc.AccordionControl('Chart Info'),
+                           dmc.AccordionPanel([dcc.Link('API Reference', href=f'https://plotly.com/python-api-reference/generated/plotly.'
+                                                          f'express.{selectChart.replace("px.", "")}.html#plotly.express.{selectChart.replace("px.", "")}',
+                                    target='_blank'),
+                           html.Br(),
+                           dcc.Link('Plotly Example Docs', href='https://plotly.com/python/', target='_blank'),
+                           html.Br(),
+                           dcc.Link('Layout References',
+                                    href='https://plotly.com/python-api-reference/generated/plotly.graph_objects.Layout.html',
+                                    target='_blank')
+                                              ]),
+                          ], value='chartInfo'),
             ]
 
 def makeCharts(data, figureDict):
