@@ -435,10 +435,18 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
                 figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
                                              opts[1]['props']['children'][1]['props']['children'])
                 figureDict['chart'] = selectChart[1]
+                figureDict['id'] = json.loads(target)
 
-                for child in children:
-                    if child['props']['id'] == json.loads(target):
-                        child['props']['figure'] = makeCharts(df, figureDict)[0]
+
+                children = children.copy()
+
+                for c in range(len(children)):
+                    if children[c]['props']['id'] == json.loads(target):
+                        if 'figure' in children[c]['props']:
+                            children[c]['props']['figure'] = makeCharts(df, figureDict)[0]
+                        else:
+                            figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
+                            children[c] = makeDCC_Graph(df, figureDict)
                 figouts = figouts.copy()
                 for f in range(len(figouts)):
                     if figouts[f]['id'] == json.loads(target):

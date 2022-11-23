@@ -80,6 +80,7 @@ def parseSelections(opts, layout):
                     try:
                         updateLayout[inp['props']['id'].replace('layout_', '')] = json.loads(inp['props']['value'])
                     except:
+                        print(traceback.format_exc())
                         updateLayout[inp['props']['id'].replace('layout_', '')] = inp['props']['value']
 
     return {'figure': info, 'layout':updateLayout}
@@ -123,7 +124,7 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                                            persistence='memory', options=[t for t in templates]))
 
             else:
-                layout.append(dcc.Input(id=str(param).split('=')[0], value=val,
+                layout.append(dcc.Input(id=str(param).split('=')[0], value=str(val),
                                     placeholder=str(param).split('=')[0],
                                         persistence='memory'))
     updateLayout = []
@@ -139,7 +140,7 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                                            placeholder=param, value=val,
                                            persistence='memory', options=[t for t in templates]))
         else:
-            updateLayout.append(dcc.Input(id='layout_' + param, value=val,
+            updateLayout.append(dcc.Input(id='layout_' + param, value=str(val),
                                 placeholder=param, persistence='memory',))
     return [
         dmc.AccordionItem([dmc.AccordionControl('Chart Options'),
@@ -203,7 +204,15 @@ def stripFigure(info):
     return info
 
 def makeDCC_Graph(data, info):
-    fig = makeCharts(data, info)[0]
+    fig, error, func_string = makeCharts(data, info)
     newInfo = stripFigure(info.copy())
     graph = dcc.Graph(figure=fig, **newInfo)
+    if error != '':
+        print(error)
+        if 'style' in newInfo:
+            newInfo['style']['display'] = 'flex'
+            newInfo['style']['justifyContent'] = 'center'
+            newInfo['style']['alignItems'] = 'center'
+        graph = html.Div([html.Div(),'uhoh, something didnt work quite right -- check your python console'],
+                         className='dash-graph', **newInfo)
     return graph
