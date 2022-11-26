@@ -31,8 +31,9 @@ def layout():
         dbc.Offcanvas(['Select the chart type and options below',
             dcc.Dropdown(id={'type':'selectChart', 'index':'design'}, options=chartOpts),
             dmc.Accordion(id={'type':'graphingOptions', 'index':'design'}, value="chartOptions"),
+            dcc.Loading(
             dbc.Button('Make Changes', id={'type': 'submitEdits', 'index': 'design'},
-                       className='m-3'),
+                       className='m-3'),id='buttonLoading'),
             ], id='chartEditor', style=offCanvStyle),
             dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
             dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",

@@ -23,13 +23,20 @@ def layout():
                                    dcc.Dropdown(id={'index': '2', 'type': 'selectChart_edit'}, options=chartOpts),
                                    dmc.Accordion(id={'index': '2', 'type': 'graphingOptions_edit'},
                                                  value="chartOptions",),
+                                   dcc.Loading([
                                    dbc.Button('Make Changes', id={'index': '2', 'type': 'submitEdits_edit'},
-                                                                  className='m-3'),
+                                                                  className='m-3')]
+                                   , id='buttonLoading_edit'),
                                    ], id='chartDesignEditor_edit', style=offCanvStyle),
                     html.Div([
                     dbc.Button('Toggle Edit Mode', id='toggleEdit', color="warning", className="me-1", n_clicks=0),
                     dbc.Button(id='openDesignEditor', children='Add Chart', n_clicks=0, className="me-1"),
                     dbc.Button(id='saveLayout', children='Save Layout', n_clicks=0, className="me-1", color='success'),
+                    dbc.Button(id='exportLayout', children='Export Layout', n_clicks=0, className="me-1", color='info'),
+                    dcc.Download(id='layoutDownload'),
+                    dbc.Button(id='exampleUse', children='Example Usage', n_clicks=0, className="me-1",
+                               color='info'),
+                    dcc.Download(id='exampleUsage')
                         ], style={'zIndex':'1', 'position':'absolute', 'width':'100%'}),
                     dbc.Button(id='editActive', style={'display':'none'}),
                     dbc.Button(id='syncStore', style={'display': 'none'}),

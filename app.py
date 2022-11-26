@@ -358,6 +358,7 @@ def graphingOptions_edit(chart, data, id, figs):
     Output('errors','children'),
     Output('functionHelper','children'),
     Output('openErrors','style'),
+    Output({'type': 'submitEdits', 'index': ALL}, 'children'),
     Input({'type':'submitEdits', 'index':'design'},'n_clicks'),
     State({'type':'tableInfo', 'index':ALL}, 'data'),
     State({'type':'graphingOptions', 'index':'design'},'children'),
@@ -365,6 +366,7 @@ def graphingOptions_edit(chart, data, id, figs):
     prevent_initial_call=True
 )
 def updateLayout(n1, data, opts, selectChart):
+    btn = ['Make Changes']
     if data and opts:
         df = pd.DataFrame.from_dict(data[0])
         df = df.infer_objects()
@@ -377,12 +379,13 @@ def updateLayout(n1, data, opts, selectChart):
             style = {'float':'right', 'display':'inline-block', 'marginRight':'1%'}
         else:
             n2 = 0
-        return dcc.Graph(figure=fig, id='testFigure'), error, func_string, style
+        return dcc.Graph(figure=fig, id='testFigure'), error, func_string, style, btn
     raise PreventUpdate
 
 @app.callback(
     Output('design-area','children'),
     Output('figures', 'data'),
+    Output({'type': 'submitEdits_edit', 'index': ALL}, 'children'),
     Input({'type': 'submitEdits_edit', 'index': ALL}, 'n_clicks'),
     Input('deleteTarget', 'n_clicks'),
     Input('figureStore', 'data'),
@@ -391,15 +394,16 @@ def updateLayout(n1, data, opts, selectChart):
     State({'type': 'selectChart_edit', 'index': ALL}, 'value'),
     State('design-area','children'),
     State('focused-graph','data'),
-    State('figures', 'data'),
+    State('figures', 'data')
 )
 def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figouts):
+    btn = ['Make Changes']*len(n1)
     if data:
         df = pd.DataFrame.from_dict(data)
         df = df.infer_objects()
         if ctx.triggered_id == 'figureStore':
             children = [makeDCC_Graph(df, i) for i in figs]
-            return children, figs
+            return children, figs, btn
         if data and opts and ctx.triggered_id != 'deleteTarget':
             if len(children) == 0:
                 figouts = []
@@ -429,7 +433,7 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
 
                 children.append(makeDCC_Graph(df, figureDict))
                 figouts.append(figureDict)
-                return children, figouts
+                return children, figouts, btn
             else:
                 opts = opts[1]
                 figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
@@ -453,7 +457,7 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
                         figouts[f] = figureDict
                         figouts[f]['id'] = json.loads(target)
 
-                return children, figouts
+                return children, figouts, btn
 
         elif ctx.triggered_id == 'deleteTarget':
             for c in range(len(children)):
@@ -464,7 +468,7 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
                 if fig['id'] == json.loads(target):
                     figouts.remove(fig)
 
-            return children, figouts
+            return children, figouts, btn
     raise PreventUpdate
 
 
@@ -539,6 +543,45 @@ app.clientside_callback(
     Input('saveLayout','n_clicks'),
     prevent_inital_call=True
 )
+
+@app.callback(
+    Output('layoutDownload', 'data'),
+    Input('exportLayout', 'n_clicks'),
+    State('figureStore', 'data'),
+    State('dataInfo', 'data'),
+    prevent_intial_call=True
+)
+def exportLayout(n1, figs, data):
+    if n1 > 0:
+        return dcc.send_string(json.dumps(figs), 'figs.json')
+    raise PreventUpdate
+
+@app.callback(
+    Output('exampleUsage', 'data'),
+    Input('exampleUse', 'n_clicks'),
+    prevent_intial_call=True
+)
+def exportLayout(n1):
+    if n1 > 0:
+        example = """
+import dash
+from dash import Dash, html
+from utils.makeCharts import makeDCC_Graph
+import json
+
+app = Dash(__name__)
+
+with open('figs.json') as f:
+    figs = json.loads(f.read())
+    
+#df = your_data
+    
+app.layout = html.Div([makeDCC_Graph(df, i) for i in figs])
+
+app.run(debug=True, port=1234)
+        """
+        return dcc.send_string(example, 'example.txt')
+    raise PreventUpdate
 
 if __name__ == '__main__':
     app.run(debug=True)
