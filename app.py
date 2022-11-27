@@ -281,7 +281,8 @@ app.clientside_callback(
     Output('persistenceClear','children'),
     [Input('uploadContent', 'contents')],
     Input('preloadData', 'value'),
-    Input('stockQuery','value')
+    Input('stockQuery','value'),
+    Input({'index':ALL, 'type':'persistenceClear'},'n_clicks')
 )
 
 
@@ -334,11 +335,12 @@ def update_output(c, pl, s, n, d, path):
 @app.callback(
     Output({'type':'graphingOptions','index':MATCH},'children'),
     Input({'type':'selectChart','index':MATCH},'value'),
-    Input('dataInfo', 'data'),
+    Input({'type':'tableInfo', 'index':1}, 'data'),
+    Input({'index': MATCH, 'type': 'persistenceClear'}, 'n_clicks'),
     prevent_initial_call=True,
 )
 
-def graphingOptions(chart, data):
+def graphingOptions(chart, data, p):
     if chart:
         df = pd.DataFrame.from_dict(data)
         return getOpts(chart, df)
@@ -347,12 +349,13 @@ def graphingOptions(chart, data):
     Output({'type':'graphingOptions_edit','index':MATCH},'children'),
     Input({'type':'selectChart_edit','index':MATCH},'value'),
     Input('dataInfo', 'data'),
+    Input({'index': MATCH, 'type': 'persistenceClear'}, 'n_clicks'),
     State('focused-graph', 'data'),
     State('figures', 'data'),
     prevent_initial_call=True,
 )
 
-def graphingOptions_edit(chart, data, id, figs):
+def graphingOptions_edit(chart, data, p, id, figs):
     if chart:
         df = pd.DataFrame.from_dict(data)
         try:

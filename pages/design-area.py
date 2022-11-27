@@ -14,19 +14,27 @@ def layout():
                     dcc.Store(id='figures', storage_type='local', data=[]),
                      dbc.Offcanvas(['Select the chart type and options below',
                                     dcc.Dropdown(id={'index':'edit', 'type':'selectChart_edit'}, options=chartOpts),
+                                    dbc.Button(id={'index': 'edit', 'type': 'persistenceClear'},
+                                               children='Clear All Values', className='m-3', color='info'),
                                     dmc.Accordion(id={'index':'edit','type':'graphingOptions_edit'},
                                                   value="chartOptions",),
+                                    dcc.Loading([
                                     dbc.Button('Make Changes', id={'index':'edit', 'type':'submitEdits_edit'},
-                                               className='m-3'),
+                                               className='m-3'),]
+                                        , id='buttonLoading_edit'),
+
                                     ], id='chartDesignEditor', style=offCanvStyle),
                     dbc.Offcanvas(['Select the chart type and options below',
                                    dcc.Dropdown(id={'index': '2', 'type': 'selectChart_edit'}, options=chartOpts),
+                                   dbc.Button(id={'index': '2', 'type': 'persistenceClear'},
+                                              children='Clear All Values', className='m-3', color='info'),
                                    dmc.Accordion(id={'index': '2', 'type': 'graphingOptions_edit'},
                                                  value="chartOptions",),
                                    dcc.Loading([
                                    dbc.Button('Make Changes', id={'index': '2', 'type': 'submitEdits_edit'},
                                                                   className='m-3')]
                                    , id='buttonLoading_edit'),
+
                                    ], id='chartDesignEditor_edit', style=offCanvStyle),
                     html.Div([
                     dbc.Button('Toggle Edit Mode', id='toggleEdit', color="warning", className="me-1", n_clicks=0),
