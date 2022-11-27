@@ -4,6 +4,7 @@ from plotly.io._templates import templates
 from plotly.express._core import make_figure
 import plotly.graph_objects as go
 import dash_mantine_components as dmc
+import dash_bootstrap_components as dbc
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
 import json
 import traceback
@@ -99,7 +100,8 @@ def getOpts(selectChart, data={}, id=None, figs=None):
         layData = {}
 
     for param in sig.parameters.values():
-        layout.append(html.Div(str(param).split('=')[0] + ':'))
+        layout.append(html.Div(str(param).split('=')[0] + ':', className=
+                               'dbc'))
         if 'data_frame' in str(param):
             layout.append(dcc.Input(id=str(param).split('=')[0],
                                 placeholder=str(param).split('=')[0],
@@ -113,7 +115,7 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                 if str(param).split('=')[0] in multiCols:
                     layout.append(dcc.Dropdown(id=str(param).split('=')[0], value=val,
                                             placeholder=str(param).split('=')[0],
-                                            persistence='memory', options=data.columns, multi=True))
+                                            persistence_type='memory', options=data.columns, multi=True))
                 else:
                     layout.append(dcc.Dropdown(id=str(param).split('=')[0], value=val,
                                                placeholder=str(param).split('=')[0],

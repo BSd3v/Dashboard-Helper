@@ -40,8 +40,8 @@ def layout():
             style={'marginLeft': '1%'}),
             dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
             style={'float': 'right', 'display': 'none', 'marginRight': '2%'}, className="me-1"),
-            dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="me-1"),
-            html.Div(id='errorsCanvas', children=[html.Pre(id='errors')]),
+            dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="hidden"),
+            html.Div(id='errorsCanvas', children=[]),
             html.Div([dcc.Graph(id='testFigure')], id='page-content')
     ]
 

@@ -293,15 +293,15 @@ app.clientside_callback(
                 Input('stockQuery','value'),
                 [State('uploadContent', 'filename'),
                 State('uploadContent', 'last_modified')],
-                running=[
-                  (Output("loadInfoSpinner", "loading_state"), {'is_loading':True}, {'is_loading':False}),
-                  (Output('contentDisplay', 'className'), 'hidden', '')
-                ],
+                State('url','pathname'),
                 prevent_initial_call=True)
-def update_output(c, pl, s, n, d):
+def update_output(c, pl, s, n, d, path):
     if c is not None and ctx.triggered_id == 'uploadContent':
         children, df = parse_contents(c, n, d)
-        return children, go.Figure(), df.to_dict('records')
+        if path == '/designer':
+            return children, go.Figure(), df.to_dict('records')
+        else:
+            return children, go.Figure(), dash.no_update
     elif ctx.triggered_id == 'preloadData':
         df = preload[pl]
         tbl = dash_table.DataTable(
@@ -310,7 +310,10 @@ def update_output(c, pl, s, n, d):
             id={'type':'tableInfo', 'index':1},
             sort_action='native',
             editable=True, )
-        return [pl, tbl], go.Figure(), df.to_dict('records')
+        if path == '/designer':
+            return [pl, tbl], go.Figure(), df.to_dict('records')
+        else:
+            return [pl, tbl], go.Figure(), dash.no_update
     elif ctx.triggered_id == 'stockQuery':
         df = yf.Ticker(s).history(period='max').reset_index()
         df['Date'] = pd.to_datetime(df['Date'])
@@ -322,7 +325,10 @@ def update_output(c, pl, s, n, d):
             id={'type':'tableInfo', 'index':1},
             sort_action='native',
             editable=True, )
-        return [s, tbl], go.Figure(), df.to_dict('records')
+        if path == '/designer':
+            return [s, tbl], go.Figure(), df.to_dict('records')
+        else:
+            return [s, tbl], go.Figure(), dash.no_update
 
 
 @app.callback(
@@ -349,16 +355,20 @@ def graphingOptions(chart, data):
 def graphingOptions_edit(chart, data, id, figs):
     if chart:
         df = pd.DataFrame.from_dict(data)
-        if ctx.triggered_id['index'] == '2':
-            return getOpts(chart, df, id, figs)
+        try:
+            if ctx.triggered_id['index'] == '2':
+                return getOpts(chart, df, id, figs)
+        except:
+            ...
         return getOpts(chart, df)
 
 @app.callback(
     Output('page-content','children'),
-    Output('errors','children'),
+    Output('errorsCanvas','children'),
     Output('functionHelper','children'),
     Output('openErrors','style'),
     Output({'type': 'submitEdits', 'index': ALL}, 'children'),
+    Output('openHelper','className'),
     Input({'type':'submitEdits', 'index':'design'},'n_clicks'),
     State({'type':'tableInfo', 'index':ALL}, 'data'),
     State({'type':'graphingOptions', 'index':'design'},'children'),
@@ -377,9 +387,14 @@ def updateLayout(n1, data, opts, selectChart):
         style = {'float': 'right', 'display': 'none'}
         if error != '':
             style = {'float':'right', 'display':'inline-block', 'marginRight':'1%'}
+            errorPre = html.Pre(error)
         else:
-            n2 = 0
-        return dcc.Graph(figure=fig, id='testFigure'), error, func_string, style, btn
+            errorPre = ''
+        if func_string != '':
+            clFunc = 'me-1'
+        else:
+            clFunc = 'hidden'
+        return dcc.Graph(figure=fig, id='testFigure'), errorPre, func_string, style, btn, clFunc
     raise PreventUpdate
 
 @app.callback(
@@ -582,6 +597,18 @@ app.run(debug=True, port=1234)
         """
         return dcc.send_string(example, 'example.txt')
     raise PreventUpdate
+
+@app.callback(
+    Output('dataOptions', 'className'),
+    Output('collapseData', 'className'),
+    Input('url', 'pathname'),
+    prevent_intial_call=True
+)
+def hideDataOpts(path):
+    if '/example' not in path:
+        return ['']*2
+    else:
+        return ['hidden']*2
 
 if __name__ == '__main__':
     app.run(debug=True)

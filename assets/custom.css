@@ -5,22 +5,18 @@
     margin-left: -10px;
 }
 
-pre {
-    white-space: pre-wrap;       /* Since CSS 2.1 */
-    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-    white-space: -pre-wrap;      /* Opera 4-6 */
-    white-space: -o-pre-wrap;    /* Opera 7 */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
-}
 
 #errorsCanvas {
-    border: 1px solid silver;
     margin-left: 1%;
     margin-right: 1%;
     width: 98%;
     max-height: 25vh;
     overflow-y: auto;
     color: red;
+}
+
+#errorsCanvas > pre {
+    border: 1pt solid silver;
 }
 
 #design-area .dash-graph {
