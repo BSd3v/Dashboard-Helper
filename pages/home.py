@@ -36,10 +36,9 @@ def layout():
                        className='m-3'),id='buttonLoading'),
             ], id='chartEditor', style=offCanvStyle),
             dbc.Offcanvas(id='functions', children=[html.Div(id='functionHelper')], style=offCanvStyle),
-            dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1",
-            style={'marginLeft': '1%'}),
+            dbc.Button(id='openEditor', children='Edit Chart Details', n_clicks=0, className="me-1"),
             dbc.Button(id='openErrors', children='Toggle Errors', n_clicks=0, color="danger",
-            style={'float': 'right', 'display': 'none', 'marginRight': '2%'}, className="me-1"),
+            style={'float': 'right', 'display': 'none'}, className="me-1"),
             dbc.Button(id='openHelper', children='Show Function', n_clicks=0, color="info", className="hidden"),
             html.Div(id='errorsCanvas', children=[]),
             html.Div([dcc.Graph(id='testFigure')], id='page-content')

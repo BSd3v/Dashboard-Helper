@@ -7,9 +7,7 @@
 
 
 #errorsCanvas {
-    margin-left: 1%;
-    margin-right: 1%;
-    width: 98%;
+    width: 100%;
     max-height: 25vh;
     overflow-y: auto;
     color: red;
