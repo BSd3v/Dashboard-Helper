@@ -1,6 +1,17 @@
 import json
-
-from dash import Dash, html, dcc, Input, Output, State, dash_table, ctx, page_container, MATCH, ALL
+from dash import (
+    Dash,
+    html,
+    dcc,
+    Input,
+    Output,
+    State,
+    dash_table,
+    ctx,
+    page_container,
+    MATCH,
+    ALL,
+)
 import dash
 from dash.exceptions import PreventUpdate
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
@@ -9,34 +20,37 @@ import dash_mantine_components as dmc
 from utils.makeCharts import makeCharts, getOpts, parseSelections, makeDCC_Graph
 import yfinance as yf
 from dash_iconify import DashIconify
-import os
-
 import datetime, base64, io, pandas as pd
-
 import plotly.express as px
 import plotly.graph_objects as go
 
 px_list = getmembers(px, isfunction)
-#go_list = getmembers(go, isclass)
-chartOpts = ['px.'+i for i, y in px_list]#+['go.'+i for i, y in go_list]
+# go_list = getmembers(go, isclass)
+chartOpts = ["px." + i for i, y in px_list]  # +['go.'+i for i, y in go_list]
 
-preload = {"carshare":px.data.carshare(),
-    "election":px.data.election(),
-    "experiment":px.data.experiment(),
-    "gapminder":px.data.gapminder(),
-    "iris":px.data.iris(),
-    "medals_wide":px.data.medals_wide(),
-    "medals_long":px.data.medals_long(),
-    "stocks":px.data.stocks(),
-    "tips":px.data.tips(),
-    "wind":px.data.wind()}
+preload = {
+    "carshare": px.data.carshare(),
+    "election": px.data.election(),
+    "experiment": px.data.experiment(),
+    "gapminder": px.data.gapminder(),
+    "iris": px.data.iris(),
+    "medals_wide": px.data.medals_wide(),
+    "medals_long": px.data.medals_long(),
+    "stocks": px.data.stocks(),
+    "tips": px.data.tips(),
+    "wind": px.data.wind(),
+}
 
 
-
-app = Dash(__name__, suppress_callback_exceptions=True, use_pages=True, #pages_folder='',
-            external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
-            external_scripts=["https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"]
-           )
+app = Dash(
+    __name__,
+    suppress_callback_exceptions=True,
+    use_pages=True,  # pages_folder='',
+    external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+    external_scripts=[
+        "https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+    ],
+)
 app.clientside_callback(
     """
         function (n1, c) {
@@ -57,114 +71,208 @@ app.clientside_callback(
             return window.dash_clientside.no_update
         }
     """,
-    Output('design-area','className'),
-    Input('toggleEdit','n_clicks'),
-    State('design-area','className'),
-    prevent_intial_call=True
+    Output("design-area", "className"),
+    Input("toggleEdit", "n_clicks"),
+    State("design-area", "className"),
+    prevent_intial_call=True,
 )
+
 
 def sidebar():
     return dbc.Nav(
-        [dbc.NavItem(dbc.NavLink(i, href=dash.page_registry[i]['path'], active='exact')) for i in dash.page_registry],
+        [
+            dbc.NavItem(
+                dbc.NavLink(i, href=dash.page_registry[i]["path"], active="exact")
+            )
+            for i in dash.page_registry
+        ],
         pills=True,
-        vertical=True
+        vertical=True,
     )
 
-app.layout = html.Div(id='div-app',children=[
-    dcc.Location(id='url'),
-    dbc.Modal(id='statusAlert', children=[html.Div(id='alert', className='alert-success')],
-              is_open=False, centered=True),
-    dcc.Store(id='dataInfo',data=[], storage_type='local'),
-    dcc.Store(id='figureStore', data=[], storage_type='local'),
-    dbc.Button(id='sidebarButton', children=DashIconify(icon="fa-bars"),
-               color="dark", style={'position':'absolute', 'top':'0px', 'margin': '0.5%'}),
-    dbc.Offcanvas(id='sidebar', children=sidebar()),
-    html.Div(id='persistenceClear'),
-    html.H2(['Data and Chart Explorer',
-             dbc.Button('Toggle Data Options', id='collapseData',
-                                                  color="warning", style={'marginLeft':'2%'})],
-            style={'textAlign':'center', 'width':'100%', 'marginTop':'10px'}),
-    dbc.Collapse(id='dataOptions',children=[
-    dcc.Loading([dbc.Row([dbc.Col([
-    dcc.Upload(id='uploadContent',
-               children=html.Div([
-                   'Drag and Drop or ',
-                   html.A('Select File')
-               ]),
-               style={
-                   'width': '98%',
-                   'height': '60px',
-                   'lineHeight': '60px',
-                   'borderWidth': '1px',
-                   'borderStyle': 'dashed',
-                   'borderRadius': '5px',
-                   'textAlign': 'center',
-                   'marginLeft':'1%',
-                    'marginRight':'1%',
-                    'marginTop':'1%',
-                   'cursor':'pointer',
-                   'backgroundColor':'white'
-               },
-               )]),dbc.Col([html.Label('Plotly Datasets:',style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
-                      'marginBottom':'1%',}),
-    dmc.Select(id='preloadData', data=list(preload.keys()),
-               style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
-                      'marginBottom':'1%',})]),dbc.Col([html.Label('Realtime Stock Info:',
-                                                                   style={'marginLeft': '1%', 'marginRight': '1%',
-                                                                          'width': '98%',
-                                                                          'marginBottom': '1%', }
-                                                                   ),
-    dcc.Input(placeholder='Ticker', id='stockQuery',
-                  style={'marginLeft':'1%', 'marginRight':'1%', 'width':'98%',
-                      'marginBottom':'1%'}, debounce=True),
-        ])], style={'backgroundColor':'#c5c6d0', 'marginLeft':'1%',
-                    'marginRight':'1%'}, id='infoLoader'),
-    html.Div(id='contentDisplay', style={'maxHeight': '25vh', 'overflowY': 'auto',
-                                                 'margin': '1%',
-                                                 'border': '1pt solid silver'},
-                     )], id='loadInfoSpinner')], is_open=True),
-    html.Div(page_container, style={'margin':'1%', 'height':'98%', 'width':'98%'})
-], style={'padding':'0px'})
+
+app.layout = html.Div(
+    id="div-app",
+    children=[
+        dcc.Location(id="url"),
+        dbc.Modal(
+            id="statusAlert",
+            children=[html.Div(id="alert", className="alert-success")],
+            is_open=False,
+            centered=True,
+        ),
+        dcc.Store(id="dataInfo", data=[], storage_type="local"),
+        dcc.Store(id="figureStore", data=[], storage_type="local"),
+        dbc.Button(
+            id="sidebarButton",
+            children=DashIconify(icon="fa-bars"),
+            color="dark",
+            style={"position": "absolute", "top": "0px", "margin": "0.5%"},
+        ),
+        dbc.Offcanvas(id="sidebar", children=sidebar()),
+        html.Div(id="persistenceClear"),
+        html.H2(
+            [
+                "Data and Chart Explorer",
+                dbc.Button(
+                    "Toggle Data Options",
+                    id="collapseData",
+                    color="warning",
+                    style={"marginLeft": "2%"},
+                ),
+            ],
+            style={"textAlign": "center", "width": "100%", "marginTop": "10px"},
+        ),
+        dbc.Collapse(
+            id="dataOptions",
+            children=[
+                dcc.Loading(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dcc.Upload(
+                                            id="uploadContent",
+                                            children=html.Div(
+                                                [
+                                                    "Drag and Drop or ",
+                                                    html.A("Select File"),
+                                                ]
+                                            ),
+                                            style={
+                                                "width": "98%",
+                                                "height": "60px",
+                                                "lineHeight": "60px",
+                                                "borderWidth": "1px",
+                                                "borderStyle": "dashed",
+                                                "borderRadius": "5px",
+                                                "textAlign": "center",
+                                                "marginLeft": "1%",
+                                                "marginRight": "1%",
+                                                "marginTop": "1%",
+                                                "cursor": "pointer",
+                                                "backgroundColor": "white",
+                                            },
+                                        )
+                                    ]
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Plotly Datasets:",
+                                            style={
+                                                "marginLeft": "1%",
+                                                "marginRight": "1%",
+                                                "width": "98%",
+                                                "marginBottom": "1%",
+                                            },
+                                        ),
+                                        dmc.Select(
+                                            id="preloadData",
+                                            data=list(preload.keys()),
+                                            style={
+                                                "marginLeft": "1%",
+                                                "marginRight": "1%",
+                                                "width": "98%",
+                                                "marginBottom": "1%",
+                                            },
+                                        ),
+                                    ]
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Label(
+                                            "Realtime Stock Info:",
+                                            style={
+                                                "marginLeft": "1%",
+                                                "marginRight": "1%",
+                                                "width": "98%",
+                                                "marginBottom": "1%",
+                                            },
+                                        ),
+                                        dcc.Input(
+                                            placeholder="Ticker",
+                                            id="stockQuery",
+                                            style={
+                                                "marginLeft": "1%",
+                                                "marginRight": "1%",
+                                                "width": "98%",
+                                                "marginBottom": "1%",
+                                            },
+                                            debounce=True,
+                                        ),
+                                    ]
+                                ),
+                            ],
+                            style={
+                                "backgroundColor": "#c5c6d0",
+                                "marginLeft": "1%",
+                                "marginRight": "1%",
+                            },
+                            id="infoLoader",
+                        ),
+                        html.Div(
+                            id="contentDisplay",
+                            style={
+                                "maxHeight": "25vh",
+                                "overflowY": "auto",
+                                "margin": "1%",
+                                "border": "1pt solid silver",
+                            },
+                            children=[
+                                dash_table.DataTable(
+                                    id={"type": "tableInfo", "index": "design"}
+                                )
+                            ],
+                        ),
+                    ],
+                    id="loadInfoSpinner",
+                )
+            ],
+            is_open=True,
+        ),
+        html.Div(
+            page_container, style={"margin": "1%", "height": "98%", "width": "98%"}
+        ),
+    ],
+    style={"padding": "0px"},
+)
+
 
 def parse_contents(contents, filename, date):
-    content_type, content_string = contents.split(',')
+    content_type, content_string = contents.split(",")
 
     decoded = base64.b64decode(content_string)
     try:
-        if 'csv' in filename:
+        if "csv" in filename:
             # Assume that the user uploaded a CSV file
-            df = pd.read_csv(
-                io.StringIO(decoded.decode('utf-8')))
-        elif 'xls' in filename:
+            df = pd.read_csv(io.StringIO(decoded.decode("utf-8")))
+        elif "xls" in filename:
             # Assume that the user uploaded an excel file
             df = pd.read_excel(io.BytesIO(decoded))
     except Exception as e:
         print(e)
-        return html.Div([
-            'There was an error processing this file.'
-        ])
+        return html.Div(["There was an error processing this file."])
 
-    return html.Div([
-        html.H5(filename),
-        html.H6(datetime.datetime.fromtimestamp(date)),
+    return (
+        html.Div(
+            [
+                html.H5(filename),
+                html.H6(datetime.datetime.fromtimestamp(date)),
+                dash_table.DataTable(
+                    data=df.to_dict("records"),
+                    columns=[{"name": i, "id": i} for i in df.columns],
+                    id={"type": "tableInfo", "index": "design"},
+                    sort_action="native",
+                    editable=True,
+                )
+            ],
+            style={"width": "98%", "margin": "1%"},
+        ),
+        df,
+    )
 
-        dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns],
-        id={'type':'tableInfo', 'index':1},
-        sort_action='native',
-        editable=True,)
-
-        # html.Hr(),  # horizontal line
-        #
-        # # For debugging, display the raw contents provided by the web browser
-        # html.Div('Raw Content'),
-        # html.Pre(contents[0:200] + '...', style={
-        #     'whiteSpace': 'pre-wrap',
-        #     'wordBreak': 'break-all'
-        # }),
-    ], style={'width':'98%', 'margin':'1%'}
-), df
 
 app.clientside_callback(
     """
@@ -175,9 +283,9 @@ app.clientside_callback(
             return window.dash_clientside.no_update
         }
     """,
-    Output('design-holder','id'),
-    Input('design-holder','id'),
-    State('dataOptions','is_open')
+    Output("design-holder", "id"),
+    Input("design-holder", "id"),
+    State("dataOptions", "is_open"),
 )
 
 
@@ -191,75 +299,74 @@ app.clientside_callback(
             return true
         }
     """,
-    Output('dataOptions','is_open'),
-    Input('collapseData','n_clicks'),
-    State('dataOptions','is_open'),
-    prevent_initial_call=True
+    Output("dataOptions", "is_open"),
+    Input("collapseData", "n_clicks"),
+    State("dataOptions", "is_open"),
+    prevent_initial_call=True,
 )
 
 
 @app.callback(
-    Output('chartEditor','is_open'),
-    Input('openEditor','n_clicks'),
-    State('chartEditor','is_open'),
-    prevent_initial_call=True
+    Output("chartEditor", "is_open"),
+    Input("openEditor", "n_clicks"),
+    State("chartEditor", "is_open"),
+    prevent_initial_call=True,
 )
-
 @app.callback(
-    Output('chartDesignEditor','is_open'),
-    Input('openDesignEditor','n_clicks'),
-    State('chartDesignEditor','is_open'),
-    prevent_initial_call=True
+    Output("chartDesignEditor", "is_open"),
+    Input("openDesignEditor", "n_clicks"),
+    State("chartDesignEditor", "is_open"),
+    prevent_initial_call=True,
 )
-
 @app.callback(
-    Output('sidebar','is_open'),
-    Input('sidebarButton','n_clicks'),
-    State('sidebar','is_open'),
-    prevent_initial_call=True
+    Output("sidebar", "is_open"),
+    Input("sidebarButton", "n_clicks"),
+    State("sidebar", "is_open"),
+    prevent_initial_call=True,
 )
-
 @app.callback(
-    Output('functions','is_open'),
-    Input('openHelper','n_clicks'),
-    State('functions','is_open'),
-    prevent_initial_call=True
+    Output("functions", "is_open"),
+    Input("openHelper", "n_clicks"),
+    State("functions", "is_open"),
+    prevent_initial_call=True,
 )
 def openEditor(n1, isOpen):
     if n1 > 0:
         return not isOpen
     return isOpen
 
+
 @app.callback(
-    Output('chartDesignEditor_edit','is_open'),
-    Output({'type':'selectChart_edit','index':'2'},'value'),
-    Input('editActive','n_clicks'),
-    State('chartDesignEditor_edit','is_open'),
-    State('focused-graph', 'data'),
-    State('figures', 'data'),
-    prevent_initial_call=True
+    Output("chartDesignEditor_edit", "is_open"),
+    Output({"type": "selectChart_edit", "index": "2"}, "value"),
+    Input("editActive", "n_clicks"),
+    State("chartDesignEditor_edit", "is_open"),
+    State("focused-graph", "data"),
+    State("figures", "data"),
+    prevent_initial_call=True,
 )
 def openEditor_edit(n1, isOpen, id, figs):
     if n1 > 0:
         for f in figs:
-            if f['id'] == json.loads(id):
-                chart = f['chart']
+            if f["id"] == json.loads(id):
+                chart = f["chart"]
         return not isOpen, chart
     return isOpen
 
 
 @app.callback(
-    Output('errorsCanvas','style'),
-    Input('openErrors','n_clicks'),
-    State('errorsCanvas','style'),
-    prevent_initial_call=True
+    Output("errorsCanvas", "style"),
+    Input("openErrors", "n_clicks"),
+    State("errorsCanvas", "style"),
+    prevent_initial_call=True,
 )
 def openErrors(n1, s):
     if n1 > 0:
-        if s == {'display':'none'}:
-            return {'display': 'block'}
-        return {'display':'none'}
+        if s == {"display": "none"}:
+            return {"display": "block"}
+        return {"display": "none"}
     return dash.no_update
+
 
 app.clientside_callback(
     """function () {
@@ -278,164 +385,201 @@ app.clientside_callback(
         }
         return ''
     }""",
-    Output('persistenceClear','children'),
-    [Input('uploadContent', 'contents')],
-    Input('preloadData', 'value'),
-    Input('stockQuery','value'),
-    Input({'index':ALL, 'type':'persistenceClear'},'n_clicks')
+    Output("persistenceClear", "children"),
+    [Input("uploadContent", "contents")],
+    Input("preloadData", "value"),
+    Input("stockQuery", "value"),
+    Input({"index": ALL, "type": "persistenceClear"}, "n_clicks"),
 )
 
 
-@app.callback(Output('contentDisplay', 'children'),
-                Output('testFigure','figure'),
-                Output('dataInfo','data'),
-                [Input('uploadContent', 'contents')],
-                Input('preloadData', 'value'),
-                Input('stockQuery','value'),
-                [State('uploadContent', 'filename'),
-                State('uploadContent', 'last_modified')],
-                State('url','pathname'),
-                prevent_initial_call=True)
+@app.callback(
+    Output("contentDisplay", "children"),
+    Output("testFigure", "figure"),
+    Output("dataInfo", "data"),
+    [Input("uploadContent", "contents")],
+    Input("preloadData", "value"),
+    Input("stockQuery", "value"),
+    [State("uploadContent", "filename"), State("uploadContent", "last_modified")],
+    State("url", "pathname"),
+    prevent_initial_call=True,
+)
 def update_output(c, pl, s, n, d, path):
-    if c is not None and ctx.triggered_id == 'uploadContent':
+    if c is not None and ctx.triggered_id == "uploadContent":
         children, df = parse_contents(c, n, d)
-        if path == '/designer':
-            return children, go.Figure(), df.to_dict('records')
+        if path == "/designer":
+            return children, go.Figure(), df.to_dict("records")
         else:
             return children, go.Figure(), dash.no_update
-    elif ctx.triggered_id == 'preloadData':
+    elif ctx.triggered_id == "preloadData":
         df = preload[pl]
         tbl = dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns],
-            id={'type':'tableInfo', 'index':1},
-            sort_action='native',
-            editable=True, )
-        if path == '/designer':
-            return [pl, tbl], go.Figure(), df.to_dict('records')
+            data=df.to_dict("records"),
+            columns=[{"name": i, "id": i} for i in df.columns],
+            id={"type": "tableInfo", "index": "design"},
+            sort_action="native",
+            editable=True,
+        )
+        if path == "/designer":
+            return [pl, tbl], go.Figure(), df.to_dict("records")
         else:
             return [pl, tbl], go.Figure(), dash.no_update
-    elif ctx.triggered_id == 'stockQuery':
-        df = yf.Ticker(s).history(period='max').reset_index()
-        df['Date'] = pd.to_datetime(df['Date'])
+    elif ctx.triggered_id == "stockQuery":
+        df = yf.Ticker(s).history(period="max").reset_index()
+        df["Date"] = pd.to_datetime(df["Date"])
         if df.empty:
             raise PreventUpdate
         tbl = dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns],
-            id={'type':'tableInfo', 'index':1},
-            sort_action='native',
-            editable=True, )
-        if path == '/designer':
-            return [s, tbl], go.Figure(), df.to_dict('records')
+            data=df.to_dict("records"),
+            columns=[{"name": i, "id": i} for i in df.columns],
+            id={"type": "tableInfo", "index": "design"},
+            sort_action="native",
+            editable=True,
+        )
+        if path == "/designer":
+            return [s, tbl], go.Figure(), df.to_dict("records")
         else:
             return [s, tbl], go.Figure(), dash.no_update
 
 
 @app.callback(
-    Output({'type':'graphingOptions','index':MATCH},'children'),
-    Input({'type':'selectChart','index':MATCH},'value'),
-    Input({'type':'tableInfo', 'index':1}, 'data'),
-    Input({'index': MATCH, 'type': 'persistenceClear'}, 'n_clicks'),
+    Output({"type": "graphingOptions", "index": MATCH}, "children"),
+    Output({"type": "persistenceClear", "index": MATCH}, "style"),
+    Output({"type": "submitEdits", "index": MATCH}, "style"),
+    Input({"type": "selectChart", "index": MATCH}, "value"),
+    Input({"type": "tableInfo", "index": MATCH}, "data"),
+    Input({"index": MATCH, "type": "persistenceClear"}, "n_clicks"),
     prevent_initial_call=True,
 )
-
 def graphingOptions(chart, data, p):
     if chart:
+        if not data:
+            return (
+                "Please load a dataset",
+                {"visibility": "hidden"},
+                {"visibility": "hidden"},
+            )
         df = pd.DataFrame.from_dict(data)
-        return getOpts(chart, df)
+        return getOpts(chart, df), {"visibility": True}, {"visibility": True}
+    return "Please select an option", {"visibility": "hidden"}, {"visibility": "hidden"}
+
 
 @app.callback(
-    Output({'type':'graphingOptions_edit','index':MATCH},'children'),
-    Input({'type':'selectChart_edit','index':MATCH},'value'),
-    Input('dataInfo', 'data'),
-    Input({'index': MATCH, 'type': 'persistenceClear'}, 'n_clicks'),
-    State('focused-graph', 'data'),
-    State('figures', 'data'),
+    Output({"type": "graphingOptions_edit", "index": MATCH}, "children"),
+    Output({"type": "persistenceClear_edit", "index": MATCH}, "style"),
+    Output({"type": "submitEdits_edit", "index": MATCH}, "style"),
+    Input({"type": "selectChart_edit", "index": MATCH}, "value"),
+    Input("dataInfo", "data"),
+    Input({"index": MATCH, "type": "persistenceClear_edit"}, "n_clicks"),
+    State("focused-graph", "data"),
+    State("figures", "data"),
     prevent_initial_call=True,
 )
-
 def graphingOptions_edit(chart, data, p, id, figs):
     if chart:
+        if not data:
+            return (
+                "Please load a dataset",
+                {"visibility": "hidden"},
+                {"visibility": "hidden"},
+            )
         df = pd.DataFrame.from_dict(data)
         try:
-            if ctx.triggered_id['index'] == '2':
-                return getOpts(chart, df, id, figs)
+            if ctx.triggered_id["index"] == "2":
+                return (
+                    getOpts(chart, df, id, figs),
+                    {"visibility": True},
+                    {"visibility": True},
+                )
         except:
             ...
-        return getOpts(chart, df)
+        return getOpts(chart, df), {"visibility": True}, {"visibility": True}
+    return "Please select an option", {"visibility": "hidden"}, {"visibility": "hidden"}
+
 
 @app.callback(
-    Output('page-content','children'),
-    Output('errorsCanvas','children'),
-    Output('functionHelper','children'),
-    Output('openErrors','style'),
-    Output({'type': 'submitEdits', 'index': ALL}, 'children'),
-    Output('openHelper','className'),
-    Input({'type':'submitEdits', 'index':'design'},'n_clicks'),
-    State({'type':'tableInfo', 'index':ALL}, 'data'),
-    State({'type':'graphingOptions', 'index':'design'},'children'),
-    State({'type':'selectChart', 'index':'design'},'value'),
-    prevent_initial_call=True
+    Output("page-content", "children"),
+    Output("errorsCanvas", "children"),
+    Output("functionHelper", "children"),
+    Output("openErrors", "style"),
+    Output({"type": "submitEdits", "index": ALL}, "children"),
+    Output("openHelper", "className"),
+    Input({"type": "submitEdits", "index": "design"}, "n_clicks"),
+    State({"type": "tableInfo", "index": ALL}, "data"),
+    State({"type": "graphingOptions", "index": "design"}, "children"),
+    State({"type": "selectChart", "index": "design"}, "value"),
+    prevent_initial_call=True,
 )
 def updateLayout(n1, data, opts, selectChart):
-    btn = ['Make Changes']
+    btn = ["Make Changes"]
     if data and opts:
         df = pd.DataFrame.from_dict(data[0])
         df = df.infer_objects()
-        figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
-                                             opts[1]['props']['children'][1]['props']['children'])
-        figureDict['chart'] = selectChart
+        figureDict = parseSelections(
+            opts[0]["props"]["children"][1]["props"]["children"],
+            opts[1]["props"]["children"][1]["props"]["children"],
+        )
+        figureDict["chart"] = selectChart
         fig, error, func_string = makeCharts(df, figureDict)
-        style = {'float': 'right', 'display': 'none'}
-        if error != '':
-            style = {'float':'right', 'display':'inline-block', 'marginRight':'1%'}
+        style = {"float": "right", "display": "none"}
+        if error != "":
+            style = {"float": "right", "display": "inline-block", "marginRight": "1%"}
             errorPre = html.Pre(error)
         else:
-            errorPre = ''
-        if func_string != '':
-            clFunc = 'me-1'
+            errorPre = ""
+        if func_string != "":
+            clFunc = "me-1"
         else:
-            clFunc = 'hidden'
-        return dcc.Graph(figure=fig, id='testFigure'), errorPre, func_string, style, btn, clFunc
+            clFunc = "hidden"
+        return (
+            dcc.Graph(figure=fig, id="testFigure"),
+            errorPre,
+            func_string,
+            style,
+            btn,
+            clFunc,
+        )
     raise PreventUpdate
 
+
 @app.callback(
-    Output('design-area','children'),
-    Output('figures', 'data'),
-    Output({'type': 'submitEdits_edit', 'index': ALL}, 'children'),
-    Input({'type': 'submitEdits_edit', 'index': ALL}, 'n_clicks'),
-    Input('deleteTarget', 'n_clicks'),
-    Input('figureStore', 'data'),
-    State('dataInfo', 'data'),
-    State({'type': 'graphingOptions_edit', 'index': ALL}, 'children'),
-    State({'type': 'selectChart_edit', 'index': ALL}, 'value'),
-    State('design-area','children'),
-    State('focused-graph','data'),
-    State('figures', 'data')
+    Output("design-area", "children"),
+    Output("figures", "data"),
+    Output({"type": "submitEdits_edit", "index": ALL}, "children"),
+    Input({"type": "submitEdits_edit", "index": ALL}, "n_clicks"),
+    Input("deleteTarget", "n_clicks"),
+    Input("figureStore", "data"),
+    State("dataInfo", "data"),
+    State({"type": "graphingOptions_edit", "index": ALL}, "children"),
+    State({"type": "selectChart_edit", "index": ALL}, "value"),
+    State("design-area", "children"),
+    State("focused-graph", "data"),
+    State("figures", "data"),
 )
 def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figouts):
-    btn = ['Make Changes']*len(n1)
+    btn = ["Make Changes"] * len(n1)
     if data:
         df = pd.DataFrame.from_dict(data)
         df = df.infer_objects()
-        if ctx.triggered_id == 'figureStore':
+        if ctx.triggered_id == "figureStore":
             children = [makeDCC_Graph(df, i) for i in figs]
             return children, figs, btn
-        if data and opts and ctx.triggered_id != 'deleteTarget':
+        if data and opts and ctx.triggered_id != "deleteTarget":
             if len(children) == 0:
                 figouts = []
             trig = ctx.triggered_id.index
 
-            if trig == 'edit':
+            if trig == "edit":
                 opts = opts[0]
-                figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
-                                             opts[1]['props']['children'][1]['props']['children'])
-                figureDict['chart'] = selectChart[0]
+                figureDict = parseSelections(
+                    opts[0]["props"]["children"][1]["props"]["children"],
+                    opts[1]["props"]["children"][1]["props"]["children"],
+                )
+                figureDict["chart"] = selectChart[0]
 
                 used = []
                 for child in children:
-                    used.append(child['props']['id']['index'])
+                    used.append(child["props"]["id"]["index"])
 
                 y = 0
                 while y < 1000:
@@ -443,47 +587,57 @@ def updateLayout(n1, d1, figs, data, opts, selectChart, children, target, figout
                         break
                     y += 1
 
+                figureDict["id"] = {"index": y, "type": "design-charts"}
 
-                figureDict['id'] = {'index':y, 'type':'design-charts'}
-
-                if not 'style' in figureDict:
-                    figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
+                if not "style" in figureDict:
+                    figureDict["style"] = {
+                        "position": "absolute",
+                        "width": "40%",
+                        "height": "40%",
+                    }
 
                 children.append(makeDCC_Graph(df, figureDict))
                 figouts.append(figureDict)
                 return children, figouts, btn
             else:
                 opts = opts[1]
-                figureDict = parseSelections(opts[0]['props']['children'][1]['props']['children'],
-                                             opts[1]['props']['children'][1]['props']['children'])
-                figureDict['chart'] = selectChart[1]
-                figureDict['id'] = json.loads(target)
-
+                figureDict = parseSelections(
+                    opts[0]["props"]["children"][1]["props"]["children"],
+                    opts[1]["props"]["children"][1]["props"]["children"],
+                )
+                figureDict["chart"] = selectChart[1]
+                figureDict["id"] = json.loads(target)
 
                 children = children.copy()
 
                 for c in range(len(children)):
-                    if children[c]['props']['id'] == json.loads(target):
-                        if 'figure' in children[c]['props']:
-                            children[c]['props']['figure'] = makeCharts(df, figureDict)[0]
+                    if children[c]["props"]["id"] == json.loads(target):
+                        if "figure" in children[c]["props"]:
+                            children[c]["props"]["figure"] = makeCharts(df, figureDict)[
+                                0
+                            ]
                         else:
-                            figureDict['style'] = {'position':'absolute', 'width':'40%', 'height': '40%'}
+                            figureDict["style"] = {
+                                "position": "absolute",
+                                "width": "40%",
+                                "height": "40%",
+                            }
                             children[c] = makeDCC_Graph(df, figureDict)
                 figouts = figouts.copy()
                 for f in range(len(figouts)):
-                    if figouts[f]['id'] == json.loads(target):
+                    if figouts[f]["id"] == json.loads(target):
                         figouts[f] = figureDict
-                        figouts[f]['id'] = json.loads(target)
+                        figouts[f]["id"] = json.loads(target)
 
                 return children, figouts, btn
 
-        elif ctx.triggered_id == 'deleteTarget':
+        elif ctx.triggered_id == "deleteTarget":
             for c in range(len(children)):
-                if children[c]['props']['id'] == json.loads(target):
+                if children[c]["props"]["id"] == json.loads(target):
                     del children[c]
                     break
             for fig in figouts:
-                if fig['id'] == json.loads(target):
+                if fig["id"] == json.loads(target):
                     figouts.remove(fig)
 
             return children, figouts, btn
@@ -501,8 +655,8 @@ app.clientside_callback(
         })}, 300)
         return window.dash_clientside.no_update
     }""",
-    Output('design-area', 'id'),
-    Input('design-area','children')
+    Output("design-area", "id"),
+    Input("design-area", "children"),
 )
 
 app.clientside_callback(
@@ -514,14 +668,22 @@ app.clientside_callback(
             return ''
         }
     """,
-    Output('focused-graph','data'),
-    Input('syncStore','n_clicks'),
-    prevent_initial_call=True
+    Output("focused-graph", "data"),
+    Input("syncStore", "n_clicks"),
+    prevent_initial_call=True,
 )
 
 app.clientside_callback(
     """
-    function saveLayout(n1) {
+    function saveLayout(n1, n2) {
+        const triggered = dash_clientside.callback_context.triggered.map(t => t.prop_id);
+        if (triggered == 'deleteLayout.n_clicks') {
+            if (confirm('You would like to delete your layout?')) {
+                return [[], '', false]
+            } else {
+                return window.dash_clientside.no_update
+            }
+        }
         if (n1 > 0) {
             figures = JSON.parse(localStorage.getItem('figures'))
             figureData = []
@@ -555,29 +717,32 @@ app.clientside_callback(
         return [JSON.parse(localStorage.getItem('figureStore')), '', false]
     }
     """,
-    Output('figureStore','data'),
-    Output('alert', 'children'),
-    Output('statusAlert','is_open'),
-    Input('saveLayout','n_clicks'),
-    prevent_inital_call=True
+    Output("figureStore", "data"),
+    Output("alert", "children"),
+    Output("statusAlert", "is_open"),
+    Input("saveLayout", "n_clicks"),
+    Input("deleteLayout", "n_clicks"),
+    prevent_inital_call=True,
 )
 
+
 @app.callback(
-    Output('layoutDownload', 'data'),
-    Input('exportLayout', 'n_clicks'),
-    State('figureStore', 'data'),
-    State('dataInfo', 'data'),
-    prevent_intial_call=True
+    Output("layoutDownload", "data"),
+    Input("exportLayout", "n_clicks"),
+    State("figureStore", "data"),
+    State("dataInfo", "data"),
+    prevent_intial_call=True,
 )
 def exportLayout(n1, figs, data):
     if n1 > 0:
-        return dcc.send_string(json.dumps(figs), 'figs.json')
+        return dcc.send_string(json.dumps(figs), "figs.json")
     raise PreventUpdate
 
+
 @app.callback(
-    Output('exampleUsage', 'data'),
-    Input('exampleUse', 'n_clicks'),
-    prevent_intial_call=True
+    Output("exampleUsage", "data"),
+    Input("exampleUse", "n_clicks"),
+    prevent_intial_call=True,
 )
 def exportLayout(n1):
     if n1 > 0:
@@ -598,20 +763,22 @@ app.layout = html.Div([makeDCC_Graph(df, i) for i in figs])
 
 app.run(debug=True, port=1234)
         """
-        return dcc.send_string(example, 'example.txt')
+        return dcc.send_string(example, "example.txt")
     raise PreventUpdate
 
+
 @app.callback(
-    Output('dataOptions', 'className'),
-    Output('collapseData', 'className'),
-    Input('url', 'pathname'),
-    prevent_intial_call=True
+    Output("dataOptions", "className"),
+    Output("collapseData", "className"),
+    Input("url", "pathname"),
+    prevent_intial_call=True,
 )
 def hideDataOpts(path):
-    if '/example' not in path:
-        return ['']*2
+    if "/example" not in path:
+        return [""] * 2
     else:
-        return ['hidden']*2
+        return ["hidden"] * 2
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(debug=True)
