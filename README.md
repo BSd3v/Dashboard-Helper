@@ -6,6 +6,8 @@ Welcome to a mini project to help people explore both plotly and their data. I b
 
 To run, just run the app.py file and navigate to the webpage that it is hosted on.
 
+---
+Home page
 ![image](https://user-images.githubusercontent.com/82055130/202308858-59ee8fc1-ce29-4877-a706-ff7e2e3ff854.png)
 
 From there, you can drag and drop or upload xlsx or csv files to create data to populate the charts.
@@ -31,5 +33,20 @@ You can see the chart in the area below the buttons. Show function will demonstr
 If the chart errors out, a new button will show up that will allow you to see the traceback message for where the function broke.
 
 ![Screen Shot 2022-11-16 at 5 34 39 PM](https://user-images.githubusercontent.com/82055130/202309350-df36f150-2d1b-46cc-987d-4bc62774d4d8.png)
+
+---
+Example page
+
+This is just an example of how you would call the function from inside python to return a dcc.Graph
+
+---
+Designer
+
+This is where the fun begins, you can load a dataset here and create a layout via the tools available. You can save a layout, then export it to use in your own application alongside these tools. Once you are done with your layout, can start over by deleting it.
+
+Also, the designer can be used in combination with flask-login to allow for end-user customizable kpis and dashboards.
+
+_**note:**_ Each automatically generated dcc.Graph comes with a pattern-matching id to be used in your callbacks. 
+`{"index": y, "type": "design-charts"}`
 
 Please enjoy!
