@@ -244,6 +244,9 @@ def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(",")
 
     decoded = base64.b64decode(content_string)
+    sizeInBytes = len(content_string) * 3 / 4 - content_string.count('=')
+    sizeInKb = sizeInBytes / 1000
+
     try:
         if "csv" in filename:
             # Assume that the user uploaded a CSV file
@@ -255,11 +258,18 @@ def parse_contents(contents, filename, date):
         print(e)
         return html.Div(["There was an error processing this file."])
 
+    if sizeInKb/1000 > 4:
+        df = df[:2999]
+        max = dbc.Alert('The dataset is over 4mb, it has been capped at 3000 rows', color='danger')
+    else:
+        max = ''
+
     return (
         html.Div(
             [
                 html.H5(filename),
                 html.H6(datetime.datetime.fromtimestamp(date)),
+                max,
                 dash_table.DataTable(
                     data=df.to_dict("records"),
                     columns=[{"name": i, "id": i} for i in df.columns],
