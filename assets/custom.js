@@ -4,12 +4,10 @@ function addEditButtons(el) {
     $(el).append('<div class="fa-solid fa-trash btn-danger"></div>')
 
     $(el).find('.fa-pen-to-square').on('click', function() {
-    localStorage.setItem('focused-graph',$(this).closest('.dash-graph')[0].id)
     setTimeout(function () {$('#syncStore').click()},100)
     setTimeout(function() {$("#editActive").click()}, 300)})
 
     $(el).find('.fa-trash').on('click', function() {
-        localStorage.setItem('focused-graph',$(this).closest('.dash-graph')[0].id)
         setTimeout($('#syncStore').click(),100)
         setTimeout( function () {
         if (confirm('Are you sure you want to delete, you cannot recover')) {

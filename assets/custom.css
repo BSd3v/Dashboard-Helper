@@ -133,3 +133,7 @@ body {
     linear-gradient(to right, rgba(0,0,0,0.125) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0,0,0,0.125) 1px, transparent 1px);
 }
+
+.focused-graph .modebar {
+ z-index: 2;
+}

@@ -57,6 +57,11 @@ app.clientside_callback(
             if (n1 > 0) {
                 $('#design-area .dash-graph').unbind()
                 $('#design-area .dash-graph > div:first-of-type').empty()
+                $('#design-area .dash-graph').on('mouseenter', function () {
+                    localStorage.setItem('focused-graph',$(this)[0].id)
+                    $('#design-area .dash-graph').removeClass('focused-graph')
+                    $(this).addClass('focused-graph')
+                })
                 if (c == 'edit') {
                     $("#design-holder").removeClass('edit')
                     return ''
@@ -658,11 +663,17 @@ app.clientside_callback(
     """function dragging(d) {
         setTimeout(function () {
         $('#design-area .dash-graph').unbind()
+        $('#design-area .dash-graph').on('mouseenter', function () {
+            localStorage.setItem('focused-graph',$(this)[0].id)
+            $('#design-area .dash-graph').removeClass('focused-graph')
+            $(this).addClass('focused-graph')
+        })
         $('#design-area .dash-graph > div:first-of-type').empty()
         $('#design-area.edit .dash-graph').each(function() {
             addEditButtons($(this).find('div')[0])
             dragElement($(this).find('.fa-up-down-left-right')[0])
         })}, 300)
+        
         return window.dash_clientside.no_update
     }""",
     Output("design-area", "id"),
