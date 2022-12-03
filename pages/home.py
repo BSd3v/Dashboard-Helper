@@ -6,6 +6,7 @@ import dash_mantine_components as dmc
 import plotly.express as px
 import plotly.graph_objects as go
 from inspect import getmembers, isfunction
+from utils.jyadaScripts import addScripts
 
 px_list = getmembers(px, isfunction)
 # go_list = getmembers(go, isclass)
@@ -86,3 +87,32 @@ def layout():
 
 
 dash.register_page("Data and Chart Explorer", path="/", layout=layout)
+
+addScripts("Data and Chart Explorer",{
+    "explore":[
+                {'target':'dataOptions', 'convo':'this is where you can choose all sorts of '
+                                                'options for uploading your data for creation'},
+               {'target':'uploadContent', 'convo':'here you can drag or choose a file to upload'},
+               {'target':'preloadData','convo':'here you can choose from plotly data sets'},
+               {'target':'stockQuery', 'convo':'this is where you can plug in a ticker to pull data from yfinance'},
+               {'target':'contentDisplay', 'convo':'once you choose a data source, the info will be displayed here'},
+                {'target':'collapseData', 'convo':'you can collapse the data to make the design area larger'},
+                {'target':'_pages_content', 'convo':'this is where you can test out different charts'},
+               {'target':'openEditor', 'convo':'here we can make adjustments to the chart options'},
+    ],
+    "create chart":[
+        {'target':'preloadData', 'convo':'first thing, we need to make sure we have some data,'
+                                         ' let me know when you are ready to continue'},
+        {'target':'toggleEdit', 'convo':'click this button if you are not already in edit mode'},
+        {'target':'openEditor', 'convo':'this will open an editor to create all the available '
+                                              'charts using your info', 'action':'click'},
+        {'target':'chartEditor .dash-dropdown', 'convo':'select a chart type from the options,'
+                                                                        ' click me to continue'},
+        {'target':'chartEditor', 'convo':'here we can see all the available arguments from your selected charts'},
+        {'target':'_pages_content', 'convo':'when you are ready click make changes and your chart will populate here'},
+        {'target':'openHelper', 'convo':'clicking here will demonstrate similar functions to what was used to create the chart'},
+        {'target':'_pages_content', 'convo':'if there are errors with what you have provided, '
+                                            'errors will appear here for troubleshooting. Happy exploring!'},
+
+    ]
+})

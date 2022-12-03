@@ -23,6 +23,7 @@ from dash_iconify import DashIconify
 import datetime, base64, io, pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from utils.jyadaScripts import scripts
 
 px_list = getmembers(px, isfunction)
 # go_list = getmembers(go, isclass)
@@ -100,12 +101,33 @@ app.layout = html.Div(
     id="div-app",
     children=[
         dcc.Location(id="url"),
+        dbc.Popover(
+            [
+                dbc.PopoverHeader("jyada"),
+                dbc.PopoverBody("Hello!\nI am Just Your Automated Dashboard Assistant.\nBut you can call me Jyada!",
+                                className='btn-info', id='jyadaPopoverConvo'),
+            ],
+            target="jyada",
+            trigger="hover",
+            placement='bottom',
+            id='jyadaPopover'
+        ),
+        dbc.Popover(
+            dbc.PopoverBody(['What do you want to do?',
+                            dcc.Dropdown(id='scriptChoices')]),
+            target='jyada',
+            trigger='legacy',
+            placement='left',
+            id='jyadaScriptOptions'
+        ),
+        html.Img(id="jyada", src='/assets/tech-support.png', className='sleeping'),
         dbc.Modal(
             id="statusAlert",
             children=[html.Div(id="alert", className="alert-success")],
             is_open=False,
             centered=True,
         ),
+        dcc.Store(id='scriptData', data=scripts, storage_type='memory'),
         dcc.Store(id="dataInfo", data=[], storage_type="local"),
         dcc.Store(id="figureStore", data=[], storage_type="local"),
         dbc.Button(
@@ -799,6 +821,69 @@ def hideDataOpts(path):
         return [""] * 2
     else:
         return ["hidden"] * 2
+
+app.clientside_callback(
+    """
+    async function (n, o) {
+        if ($("#jyada").hasClass('sleeping')) {
+            return !o
+        }
+        return window.dash_clientside.no_update
+    }
+    """,
+    Output('jyadaPopover','is_open'),
+    Input('jyada','n_clicks'),
+    State('jyadaScriptOptions','is_open'),
+    prevent_initial_call = True
+)
+
+app.clientside_callback(
+    """function (is) {
+        if ($("#jyada").attr("convo")) {
+            return $("#jyada").attr("convo")
+        }
+        return "Hello! I am Just Your Automated Dashboard Assistant. But you can call me Jyada!"
+    }""",
+    Output("jyadaPopoverConvo","children"),
+    Input("jyadaPopover","is_open"),
+    prevent_initial_call = True
+)
+
+app.clientside_callback(
+    """
+    function(o, p, d) {
+        if (!$("#jyada").hasClass('sleeping')) {
+            return ['hidden', window.dash_clientside.no_update]
+        }
+        return ['', Object.keys(d[p])]
+    }
+    """,
+    Output('jyadaScriptOptions','className'),
+    Output('scriptChoices','options'),
+    Input('jyadaScriptOptions','is_open'),
+    State('url','pathname'),
+    State('scriptData','data'),
+    prevent_initial_call = True
+)
+
+app.clientside_callback(
+    """
+    function(v, p, d) {
+        if (v) {
+            if (v != '') {
+                playScript(d[p][v])
+                return false
+            }
+        }
+        return true
+    }
+    """,
+    Output('jyadaScriptOptions','is_open'),
+    Input('scriptChoices','value'),
+    State('url','pathname'),
+    State('scriptData','data'),
+    prevent_initial_call = True
+)
 
 
 if __name__ == "__main__":

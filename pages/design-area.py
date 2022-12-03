@@ -3,6 +3,7 @@ from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 from pages.home import offCanvStyle, chartOpts
 import dash_mantine_components as dmc
+from utils.jyadaScripts import addScripts
 
 
 def layout():
@@ -143,3 +144,41 @@ def layout():
 
 
 dash.register_page("Designer", path="/designer", layout=layout)
+
+addScripts("Designer",{
+    "explore":[
+                {'target':'dataOptions', 'convo':'this is where you can choose all sorts of '
+                                                'options for uploading your data for creation'},
+               {'target':'uploadContent', 'convo':'here you can drag or choose a file to upload'},
+               {'target':'preloadData','convo':'here you can choose from plotly data sets'},
+               {'target':'stockQuery', 'convo':'this is where you can plug in a ticker to pull data from yfinance'},
+               {'target':'contentDisplay', 'convo':'once you choose a data source, the info will be displayed here'},
+                {'target':'collapseData', 'convo':'you can collapse the data to make the design area larger'},
+                {'target':'design-holder', 'convo':'this is where you can design your layout'},
+               {'target':'toggleEdit', 'convo':'here you can toggle edit mode to make changes'},
+               {'target':'exportLayout', 'convo':'this will let you export your saved layout as a json '
+                                                 'file of figures'},
+               {'target':'exampleUse', 'convo':'if you download this text file, it will show you an example way'
+                                               ' that you can use the figure json and your chosen dataframe in your'
+                                               ' own projects'}],
+    "create layout":[
+        {'target':'design-holder', 'convo':'here is where we are going to design our layout'},
+        {'target':'preloadData', 'convo':'first thing, we need to make sure we have some data,'
+                                         ' let me know when you are ready to continue'},
+        {'target':'toggleEdit', 'convo':'click this button if you are not already in edit mode'},
+        {'target':'openDesignEditor', 'convo':'this will open an editor to create all the available '
+                                              'charts using your info', 'action':'click'},
+        {'target':'chartDesignEditor .dash-dropdown', 'convo':'select a chart type from the options,'
+                                                                        ' click me to continue'},
+        {'target':'chartDesignEditor', 'convo':'here we can see all the available arguments from your selected charts'},
+        {'target':'design-area', 'convo':'when you are ready click make changes and your chart will populate here'},
+        {'target':'design-area .dash-graph', 'convo':'there are a couple things to note here. '
+                                         'You can resize the chart in the lower right hand corner. You can also '
+                                         'move the chart by clicking and dragging on the move icon. '
+                                         'You can also edit and delete with the other icons.'},
+        {'target':'saveLayout', 'convo':'once you get a layout you like, click Save Layout to save your work'},
+        {'target':'deleteLayout', 'convo':'if you want to start from scratch, click Delete Layout'},
+        {'target':'design-area', 'convo':'one other thing of note, all automatically generated charts will have '
+                                         'pattern matching ids assigned for use in your applications. Happy designing!'}
+    ]
+})
