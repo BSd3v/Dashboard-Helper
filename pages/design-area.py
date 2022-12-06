@@ -170,7 +170,13 @@ addScripts("Designer",{
                                               'charts using your info', 'action':'click'},
         {'target':'chartDesignEditor .dash-dropdown', 'convo':'select a chart type from the options,'
                                                                         ' click me to continue'},
-        {'target':'chartDesignEditor', 'convo':'here we can see all the available arguments from your selected charts'},
+        {'target':'chartDesignEditor .mantine-Accordion-item',
+         'convo':'here we can see all the available arguments from your selected chart'},
+        {'target':'chartDesignEditor .mantine-Accordion-item:nth-child(2)',
+         'convo':'this will show you all the options for the figure layout'},
+        {'target':'chartDesignEditor .mantine-Accordion-item:nth-child(3)',
+         'convo':'here is where you can see different info about the chart like '
+                 'APIs for the chart, examples and layout info'},
         {'target':'design-area', 'convo':'when you are ready click make changes and your chart will populate here'},
         {'target':'design-area .dash-graph', 'convo':'there are a couple things to note here. '
                                          'You can resize the chart in the lower right hand corner. You can also '

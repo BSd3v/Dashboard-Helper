@@ -108,7 +108,13 @@ addScripts("Data and Chart Explorer",{
                                               'charts using your info', 'action':'click'},
         {'target':'chartEditor .dash-dropdown', 'convo':'select a chart type from the options,'
                                                                         ' click me to continue'},
-        {'target':'chartEditor', 'convo':'here we can see all the available arguments from your selected charts'},
+        {'target':'chartEditor .mantine-Accordion-item:nth-child(1)',
+         'convo':'here we can see all the available arguments from your selected charts'},
+        {'target':'chartEditor .mantine-Accordion-item:nth-child(2)',
+         'convo':'this will show you all the options for the figure layout'},
+        {'target':'chartEditor .mantine-Accordion-item:nth-child(3)',
+         'convo':'here is where you can see different info about the chart like '
+                 'APIs for the chart, examples and layout info'},
         {'target':'_pages_content', 'convo':'when you are ready click make changes and your chart will populate here'},
         {'target':'openHelper', 'convo':'clicking here will demonstrate similar functions to what was used to create the chart'},
         {'target':'_pages_content', 'convo':'if there are errors with what you have provided, '

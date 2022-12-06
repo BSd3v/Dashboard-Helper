@@ -13,7 +13,7 @@ async function playScript(data) {
             await delay(500)
         }
         if ($('#'+data[y].target)[0]) {
-            $('#'+data[y].target).toggleClass('highlighting')
+            $($('#'+data[y].target)[0]).toggleClass('highlighting')
             tBounds = $('#'+data[y].target)[0].getBoundingClientRect()
             $('#jyada').css({'top':tBounds.top + tBounds.height/4,
             'left':tBounds.left + tBounds.width/2.5})
@@ -26,7 +26,7 @@ async function playScript(data) {
             if ('action' in data[y]) {
                 if (data[y]['action'] == 'click') {$('#'+data[y].target).click()}
             }
-            $('#'+data[y].target).toggleClass('highlighting')
+            $($('#'+data[y].target)[0]).toggleClass('highlighting')
         }
     }
     $(document).unbind('keydown')
