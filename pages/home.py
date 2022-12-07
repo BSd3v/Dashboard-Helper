@@ -86,9 +86,9 @@ def layout():
     ]
 
 
-dash.register_page("Data and Chart Explorer", path="/", layout=layout)
+dash.register_page("Explore the Data", path="/", layout=layout)
 
-addScripts("Data and Chart Explorer",{
+addScripts("Explore the Data",{
     "explore":[
                 {'target':'dataOptions', 'convo':'this is where you can choose all sorts of '
                                                 'options for uploading your data for creation'},

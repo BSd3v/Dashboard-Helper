@@ -143,9 +143,9 @@ def layout():
     )
 
 
-dash.register_page("Designer", path="/designer", layout=layout)
+dash.register_page("Design your Dashboard", path="/designer", layout=layout)
 
-addScripts("Designer",{
+addScripts("Design your Dashboard",{
     "explore":[
                 {'target':'dataOptions', 'convo':'this is where you can choose all sorts of '
                                                 'options for uploading your data for creation'},

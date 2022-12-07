@@ -148,6 +148,7 @@ app.layout = html.Div(
                     style={"marginLeft": "2%"},
                 ),
             ],
+            id="header",
             style={"textAlign": "center", "width": "100%", "marginTop": "10px"},
         ),
         dbc.Collapse(
@@ -437,12 +438,13 @@ app.clientside_callback(
     [Input("uploadContent", "contents")],
     Input("preloadData", "value"),
     Input("stockQuery", "value"),
+    State('url', 'pathname'),
     [State("uploadContent", "filename"), State("uploadContent", "last_modified")],
-    State("url", "pathname"),
     prevent_initial_call=True,
+    suppress_callback_exceptions=True
 )
-def update_output(c, pl, s, n, d, path):
-    if c is not None and ctx.triggered_id == "uploadContent":
+def update_output(c, pl, s, path, n, d):
+    if c is not None and c != '' and ctx.triggered_id == "uploadContent":
         children, df = parse_contents(c, n, d)
         if path == "/designer":
             return children, go.Figure(), df.to_dict("records")
@@ -477,6 +479,34 @@ def update_output(c, pl, s, n, d, path):
             return [s, tbl], go.Figure(), df.to_dict("records")
         else:
             return [s, tbl], go.Figure(), dash.no_update
+    else:
+        return [dash_table.DataTable(id={"type": "tableInfo", "index": "design"})],\
+               go.Figure(), dash.no_update
+
+app.clientside_callback(
+    """
+    function (p, c, pl, s) {
+        console.log([c, pl, s])
+        if (typeof c == 'undefined' && typeof pl == 'undefined' && typeof s == 'undefined' ) {}
+        else {
+            return ['', '', '']
+        }
+        return [window.dash_clientside.no_update, window.dash_clientside.no_update, window.dash_clientside.no_update]
+    }
+    """,
+    Output("uploadContent", "contents"),
+    Output("preloadData", "value"),
+    Output("stockQuery", "value"),
+    Input('url','pathname'),
+    State("uploadContent", "contents"),
+    State("preloadData", "value"),
+    State("stockQuery", "value"),
+    prevent_initial_call=True
+)
+# def changePageClearValues(p, c, pl, s):
+#     if (c == '' and pl == '' and s == ''):
+#         raise PreventUpdate
+#     return '', '', ''
 
 
 @app.callback(
@@ -811,16 +841,31 @@ app.run(debug=True, port=1234)
 
 
 @app.callback(
-    Output("dataOptions", "className"),
-    Output("collapseData", "className"),
+    Output("header", "children"),
     Input("url", "pathname"),
     prevent_intial_call=True,
 )
 def hideDataOpts(path):
-    if "/example" not in path:
-        return [""] * 2
+    if "/designer" not in path:
+        return [
+                "Explore the Data",
+                dbc.Button(
+                    "Toggle Data Options",
+                    id="collapseData",
+                    color="warning",
+                    style={"marginLeft": "2%"},
+                ),
+            ]
     else:
-        return ["hidden"] * 2
+        return [
+            "Design your Dashboard",
+            dbc.Button(
+                "Toggle Data Options",
+                id="collapseData",
+                color="warning",
+                style={"marginLeft": "2%"},
+            ),
+        ]
 
 app.clientside_callback(
     """
