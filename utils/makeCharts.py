@@ -7,7 +7,7 @@ import dash_mantine_components as dmc
 from inspect import getmembers, isfunction, getargvalues, signature, isclass
 import json
 import traceback
-from utils.buildCols import cols, multiCols
+from utils.buildCols import getColumns
 
 
 layoutList = [
@@ -186,6 +186,8 @@ def parseSelections(opts, layout):
 def getOpts(selectChart, data={}, id=None, figs=None):
     layout = []
     sig = signature(findFunc(selectChart))
+
+    cols, multiCols= getColumns(selectChart)
 
     if id:
         for f in figs:
