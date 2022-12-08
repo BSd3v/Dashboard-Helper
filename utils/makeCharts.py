@@ -136,15 +136,25 @@ def parseSelections(opts, layout):
                 args.append(
                     inp["props"]["id"] + '="' + str(inp["props"]["value"]) + '"'
                 )
-                if inp["props"]["value"] == "False":
-                    info[inp["props"]["id"]] = False
-                elif inp["props"]["value"] == "True":
-                    info[inp["props"]["id"]] = True
-                else:
-                    try:
-                        info[inp["props"]["id"]] = json.loads(inp["props"]["value"])
-                    except:
-                        info[inp["props"]["id"]] = inp["props"]["value"]
+                if inp["props"]["value"]:
+                    if isinstance(inp["props"]["value"], str):
+                        if inp["props"]["value"].lower() == "false":
+                            info[inp["props"]["id"].replace("layout_", "")] = False
+                        elif inp["props"]["value"].lower() == "true":
+                            info[inp["props"]["id"].replace("layout_", "")] = True
+                        else:
+                            try:
+                                info[
+                                    inp["props"]["id"].replace("layout_", "")
+                                ] = json.loads(inp["props"]["value"])
+                            except:
+                                info[inp["props"]["id"].replace("layout_", "")] = inp[
+                                    "props"
+                                ]["value"]
+                    else:
+                        info[
+                            inp["props"]["id"].replace("layout_", "")
+                        ] = inp["props"]["value"]
 
     updateLayout = {}
     lay = layout["props"]["children"]
@@ -165,20 +175,25 @@ def parseSelections(opts, layout):
                     + str(inp["props"]["value"])
                     + '"'
                 )
-                if inp["props"]["value"] == "False":
-                    updateLayout[inp["props"]["id"].replace("layout_", "")] = False
-                elif inp["props"]["value"] == "True":
-                    updateLayout[inp["props"]["id"].replace("layout_", "")] = True
-                else:
-                    try:
+                if inp["props"]["value"]:
+                    if isinstance(inp["props"]["value"], str):
+                        if inp["props"]["value"].lower() == "false":
+                            updateLayout[inp["props"]["id"].replace("layout_", "")] = False
+                        elif inp["props"]["value"].lower() == "true":
+                            updateLayout[inp["props"]["id"].replace("layout_", "")] = True
+                        else:
+                            try:
+                                updateLayout[
+                                    inp["props"]["id"].replace("layout_", "")
+                                ] = json.loads(inp["props"]["value"])
+                            except:
+                                updateLayout[inp["props"]["id"].replace("layout_", "")] = inp[
+                                    "props"
+                                ]["value"]
+                    else:
                         updateLayout[
                             inp["props"]["id"].replace("layout_", "")
-                        ] = json.loads(inp["props"]["value"])
-                    except:
-                        print(traceback.format_exc())
-                        updateLayout[inp["props"]["id"].replace("layout_", "")] = inp[
-                            "props"
-                        ]["value"]
+                        ] = inp["props"]["value"]
 
     return {"figure": info, "layout": updateLayout}
 
@@ -243,7 +258,7 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                 layout.append(
                     dcc.Dropdown(
                         id=str(param).split("=")[0],
-                        value=val,
+                        value=json.dumps(val),
                         placeholder=str(param).split("=")[0],
                         persistence="memory",
                         options=[t for t in templates],
@@ -251,10 +266,12 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                 )
 
             else:
+                if not isinstance(val, str):
+                    val = json.dumps(val)
                 layout.append(
                     dcc.Input(
                         id=str(param).split("=")[0],
-                        value=str(val),
+                        value=val,
                         placeholder=str(param).split("=")[0],
                         persistence="memory",
                     )
@@ -278,10 +295,12 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                 )
             )
         else:
+            if not isinstance(val, str):
+                val = json.dumps(val)
             updateLayout.append(
                 dcc.Input(
                     id="layout_" + param,
-                    value=str(val),
+                    value=val,
                     placeholder=param,
                     persistence="memory",
                 )

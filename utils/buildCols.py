@@ -23,7 +23,7 @@ def getColumns(selectChart):
                         if opt not in cols:
                             cols.append(opt)
                     elif "Either a list of names of columns in `data_frame`" in l\
-                            or _doc.colref_list_desc in l:
+                            or _doc.colref_list_desc in l or "Either names of columns in `data_frame`" in l:
                         if opt not in multiCols:
                             multiCols.append(opt)
                     elif "can optionally be a list of column references" in l and opt != 'x':
