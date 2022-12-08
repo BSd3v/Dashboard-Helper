@@ -433,23 +433,23 @@ app.clientside_callback(
 
 @app.callback(
     Output("contentDisplay", "children"),
-    Output("testFigure", "figure"),
+    Output({'index':ALL, 'type':"testFigure"}, "figure"),
     Output("dataInfo", "data"),
     [Input("uploadContent", "contents")],
     Input("preloadData", "value"),
     Input("stockQuery", "value"),
-    State('url', 'pathname'),
+    Input('url', 'pathname'),
     [State("uploadContent", "filename"), State("uploadContent", "last_modified")],
-    prevent_initial_call=True,
-    suppress_callback_exceptions=True
+    State('dataInfo','data'),State({'index':ALL, 'type':"testFigure"}, "figure"),
+    prevent_initial_call=True
 )
-def update_output(c, pl, s, path, n, d):
+def update_output(c, pl, s, path, n, d, data, fig):
     if c is not None and c != '' and ctx.triggered_id == "uploadContent":
         children, df = parse_contents(c, n, d)
         if path == "/designer":
-            return children, go.Figure(), df.to_dict("records")
+            return children, [go.Figure()]*len(fig), df.to_dict("records")
         else:
-            return children, go.Figure(), dash.no_update
+            return children, [go.Figure()]*len(fig), dash.no_update
     elif ctx.triggered_id == "preloadData":
         df = preload[pl]
         tbl = dash_table.DataTable(
@@ -460,9 +460,9 @@ def update_output(c, pl, s, path, n, d):
             editable=True,
         )
         if path == "/designer":
-            return [pl, tbl], go.Figure(), df.to_dict("records")
+            return [pl, tbl], [go.Figure()]*len(fig), df.to_dict("records")
         else:
-            return [pl, tbl], go.Figure(), dash.no_update
+            return [pl, tbl], [go.Figure()]*len(fig), dash.no_update
     elif ctx.triggered_id == "stockQuery":
         df = yf.Ticker(s).history(period="max").reset_index()
         df["Date"] = pd.to_datetime(df["Date"])
@@ -476,38 +476,16 @@ def update_output(c, pl, s, path, n, d):
             editable=True,
         )
         if path == "/designer":
-            return [s, tbl], go.Figure(), df.to_dict("records")
+            return [s, tbl], [go.Figure()]*len(fig), df.to_dict("records")
         else:
-            return [s, tbl], go.Figure(), dash.no_update
+            return [s, tbl], [go.Figure()]*len(fig), dash.no_update
     else:
-        return [dash_table.DataTable(id={"type": "tableInfo", "index": "design"})],\
-               go.Figure(), dash.no_update
-
-app.clientside_callback(
-    """
-    function (p, c, pl, s) {
-        console.log([c, pl, s])
-        if (typeof c == 'undefined' && typeof pl == 'undefined' && typeof s == 'undefined' ) {}
-        else {
-            return ['', '', '']
-        }
-        return [window.dash_clientside.no_update, window.dash_clientside.no_update, window.dash_clientside.no_update]
-    }
-    """,
-    Output("uploadContent", "contents"),
-    Output("preloadData", "value"),
-    Output("stockQuery", "value"),
-    Input('url','pathname'),
-    State("uploadContent", "contents"),
-    State("preloadData", "value"),
-    State("stockQuery", "value"),
-    prevent_initial_call=True
-)
-# def changePageClearValues(p, c, pl, s):
-#     if (c == '' and pl == '' and s == ''):
-#         raise PreventUpdate
-#     return '', '', ''
-
+        if path == "/designer":
+            return [dash_table.DataTable(data=data, id={"type": "tableInfo", "index": "design"})],\
+               [go.Figure()]*len(fig), dash.no_update
+        else:
+            return [dash_table.DataTable(id={"type": "tableInfo", "index": "design"})], \
+                   [go.Figure()] * len(fig), dash.no_update
 
 @app.callback(
     Output({"type": "graphingOptions", "index": MATCH}, "children"),
@@ -599,7 +577,7 @@ def updateLayout(n1, data, opts, selectChart):
         else:
             clFunc = "hidden"
         return (
-            dcc.Graph(figure=fig, id="testFigure"),
+            dcc.Graph(figure=fig, id={'index':'design', 'type':"testFigure"}),
             errorPre,
             func_string,
             style,

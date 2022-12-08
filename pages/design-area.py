@@ -19,7 +19,7 @@ def layout():
                     "width": "100%",
                 },
             ),
-            dcc.Graph(id="testFigure", style={"display": "none"}),
+            dcc.Graph(id={'index':'edit', 'type':"testFigure"}, style={"display": "none"}),
             dcc.Store(id="focused-graph", storage_type="local"),
             dcc.Store(id="figures", storage_type="local", data=[]),
             dbc.Offcanvas(
