@@ -132,11 +132,11 @@ def parseSelections(opts, layout):
         if "value" in inp["props"]:
             if inp["props"]["id"] == "data_frame":
                 args.append(inp["props"]["id"] + "=" + inp["props"]["value"] + "")
-            elif inp["props"]["value"] != "":
+            elif inp["props"]["value"] != "" and inp["props"]["value"]:
                 args.append(
                     inp["props"]["id"] + '="' + str(inp["props"]["value"]) + '"'
                 )
-                if inp["props"]["value"]:
+                if inp["props"]["value"] and inp["props"]["value"] != '':
                     if isinstance(inp["props"]["value"], str):
                         if inp["props"]["value"].lower() == "false":
                             info[inp["props"]["id"].replace("layout_", "")] = False
@@ -175,7 +175,7 @@ def parseSelections(opts, layout):
                     + str(inp["props"]["value"])
                     + '"'
                 )
-                if inp["props"]["value"]:
+                if inp["props"]["value"] and inp["props"]["value"] != '':
                     if isinstance(inp["props"]["value"], str):
                         if inp["props"]["value"].lower() == "false":
                             updateLayout[inp["props"]["id"].replace("layout_", "")] = False
@@ -258,7 +258,7 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                 layout.append(
                     dcc.Dropdown(
                         id=str(param).split("=")[0],
-                        value=json.dumps(val),
+                        value=val,
                         placeholder=str(param).split("=")[0],
                         persistence="memory",
                         options=[t for t in templates],
