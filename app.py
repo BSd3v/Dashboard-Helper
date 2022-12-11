@@ -530,7 +530,7 @@ def graphingOptions_edit(chart, data, p, id, figs):
             )
         df = pd.DataFrame.from_dict(data)
         try:
-            if ctx.triggered_id["index"] == "2":
+            if ctx.triggered_id["type"] == "selectChart_edit":
                 return (
                     getOpts(chart, df, id, figs),
                     {"visibility": True},
