@@ -1,0 +1,9 @@
+cols.txt
+multiCols.txt
+pages/__pycache__/design-area.cpython-311.pyc
+pages/__pycache__/home.cpython-311.pyc
+utils/__pycache__/buildCols.cpython-311.pyc
+utils/__pycache__/jyadaScripts.cpython-311.pyc
+utils/__pycache__/makeCharts.cpython-311.pyc
+.idea/Dashboard-Helper.iml
+.idea/misc.xml

@@ -343,6 +343,30 @@ app.clientside_callback(
     prevent_initial_call=True,
 )
 
+app.clientside_callback(
+    """
+        function (v, s) {
+            if (v) {
+                if (v[0]) {
+                    if (s) {
+                        if (Array.isArray(s)) {
+                            return [v[0], s]
+                        }
+                        return [v[0], [s]]
+                    }
+                    return [v[0], null]
+                }
+                return [false, s[0] || null]
+            }
+            return (window.dash_clientside.no_update, window.dash_clientside.no_update)
+        }
+    """,
+    Output("y","multi"),
+    Output("y","value"),
+    Input("y_multi", "value"),
+    State("y","value"),
+)
+
 
 @app.callback(
     Output("chartEditor", "is_open"),

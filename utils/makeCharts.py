@@ -194,7 +194,6 @@ def parseSelections(opts, layout):
                         updateLayout[
                             inp["props"]["id"].replace("layout_", "")
                         ] = inp["props"]["value"]
-
     return {"figure": info, "layout": updateLayout}
 
 
@@ -212,6 +211,17 @@ def getOpts(selectChart, data={}, id=None, figs=None):
     else:
         figureData = {}
         layData = {}
+
+    if 'y_multi' in figureData:
+        if figureData['y_multi']:
+            y_multi = True
+            y_multi_value = figureData['y_multi']
+        else:
+            y_multi = False
+            y_multi_value = []
+    else:
+        y_multi = False
+        y_multi_value = []
 
     for param in sig.parameters.values():
         layout.append(html.Div(str(param).split("=")[0] + ":", className="dbc"))
@@ -239,18 +249,19 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                             id=str(param).split("=")[0],
                             value=val,
                             placeholder=str(param).split("=")[0],
-                            persistence_type="memory",
                             options=data.columns,
-                            multi=True,
+                            multi=y_multi,
                         )
                     )
+                    if str(param).split("=")[0] == 'y':
+                        layout.append(dcc.Checklist(options=[{'label':'multi column y?','value':True}],
+                                                    value=y_multi_value, id='y_multi'))
                 else:
                     layout.append(
                         dcc.Dropdown(
                             id=str(param).split("=")[0],
                             value=val,
                             placeholder=str(param).split("=")[0],
-                            persistence="memory",
                             options=data.columns,
                         )
                     )
@@ -260,7 +271,6 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                         id=str(param).split("=")[0],
                         value=val,
                         placeholder=str(param).split("=")[0],
-                        persistence="memory",
                         options=[t for t in templates],
                     )
                 )
@@ -273,7 +283,6 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                         id=str(param).split("=")[0],
                         value=val,
                         placeholder=str(param).split("=")[0],
-                        persistence="memory",
                     )
                 )
     updateLayout = []
@@ -290,7 +299,6 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                     id="layout_" + param,
                     placeholder=param,
                     value=val,
-                    persistence="memory",
                     options=[t for t in templates],
                 )
             )
@@ -302,7 +310,6 @@ def getOpts(selectChart, data={}, id=None, figs=None):
                     id="layout_" + param,
                     value=val,
                     placeholder=param,
-                    persistence="memory",
                 )
             )
     return [
@@ -392,10 +399,12 @@ def makeCharts(data, figureDict):
 
     error = ""
     try:
+        figureInfo = figureDict["figure"].copy()
+        figureInfo.pop('y_multi', None)
         if "px." in selectChart:
-            fig = findFunc(selectChart)(data_frame=data, **figureDict["figure"])
+            fig = findFunc(selectChart)(data_frame=data, **figureInfo)
         else:
-            fig = createGo(selectChart, **figureDict["figure"])
+            fig = createGo(selectChart, **figureInfo)
         if "layout" in figureDict:
             fig.update_layout(figureDict["layout"])
 
